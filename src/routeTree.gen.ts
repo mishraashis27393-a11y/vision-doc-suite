@@ -15,6 +15,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedAiCreateRouteImport } from './routes/_authenticated/ai-create'
 import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/home'
 import { Route as AuthenticatedImageToPdfRouteImport } from './routes/_authenticated/image-to-pdf'
+import { Route as AuthenticatedLibraryRouteImport } from './routes/_authenticated/library'
 import { Route as AuthenticatedScanRouteImport } from './routes/_authenticated/scan'
 
 const IndexRoute = IndexRouteImport.update({
@@ -46,6 +47,11 @@ const AuthenticatedImageToPdfRoute = AuthenticatedImageToPdfRouteImport.update({
   path: '/image-to-pdf',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedLibraryRoute = AuthenticatedLibraryRouteImport.update({
+  id: '/library',
+  path: '/library',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedScanRoute = AuthenticatedScanRouteImport.update({
   id: '/scan',
   path: '/scan',
@@ -58,6 +64,7 @@ export interface FileRoutesByFullPath {
   '/ai-create': typeof AuthenticatedAiCreateRoute
   '/home': typeof AuthenticatedHomeRoute
   '/image-to-pdf': typeof AuthenticatedImageToPdfRoute
+  '/library': typeof AuthenticatedLibraryRoute
   '/scan': typeof AuthenticatedScanRoute
 }
 export interface FileRoutesByTo {
@@ -66,6 +73,7 @@ export interface FileRoutesByTo {
   '/ai-create': typeof AuthenticatedAiCreateRoute
   '/home': typeof AuthenticatedHomeRoute
   '/image-to-pdf': typeof AuthenticatedImageToPdfRoute
+  '/library': typeof AuthenticatedLibraryRoute
   '/scan': typeof AuthenticatedScanRoute
 }
 export interface FileRoutesById {
@@ -76,13 +84,28 @@ export interface FileRoutesById {
   '/_authenticated/ai-create': typeof AuthenticatedAiCreateRoute
   '/_authenticated/home': typeof AuthenticatedHomeRoute
   '/_authenticated/image-to-pdf': typeof AuthenticatedImageToPdfRoute
+  '/_authenticated/library': typeof AuthenticatedLibraryRoute
   '/_authenticated/scan': typeof AuthenticatedScanRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/ai-create' | '/home' | '/image-to-pdf' | '/scan'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/ai-create'
+    | '/home'
+    | '/image-to-pdf'
+    | '/library'
+    | '/scan'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/ai-create' | '/home' | '/image-to-pdf' | '/scan'
+  to:
+    | '/'
+    | '/auth'
+    | '/ai-create'
+    | '/home'
+    | '/image-to-pdf'
+    | '/library'
+    | '/scan'
   id:
     | '__root__'
     | '/'
@@ -91,6 +114,7 @@ export interface FileRouteTypes {
     | '/_authenticated/ai-create'
     | '/_authenticated/home'
     | '/_authenticated/image-to-pdf'
+    | '/_authenticated/library'
     | '/_authenticated/scan'
   fileRoutesById: FileRoutesById
 }
@@ -144,6 +168,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedImageToPdfRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/library': {
+      id: '/_authenticated/library'
+      path: '/library'
+      fullPath: '/library'
+      preLoaderRoute: typeof AuthenticatedLibraryRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/scan': {
       id: '/_authenticated/scan'
       path: '/scan'
@@ -158,6 +189,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAiCreateRoute: typeof AuthenticatedAiCreateRoute
   AuthenticatedHomeRoute: typeof AuthenticatedHomeRoute
   AuthenticatedImageToPdfRoute: typeof AuthenticatedImageToPdfRoute
+  AuthenticatedLibraryRoute: typeof AuthenticatedLibraryRoute
   AuthenticatedScanRoute: typeof AuthenticatedScanRoute
 }
 
@@ -165,6 +197,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAiCreateRoute: AuthenticatedAiCreateRoute,
   AuthenticatedHomeRoute: AuthenticatedHomeRoute,
   AuthenticatedImageToPdfRoute: AuthenticatedImageToPdfRoute,
+  AuthenticatedLibraryRoute: AuthenticatedLibraryRoute,
   AuthenticatedScanRoute: AuthenticatedScanRoute,
 }
 
