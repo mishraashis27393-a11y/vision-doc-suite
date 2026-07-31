@@ -1,19 +1,9 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
-import { useQueryClient } from "@tanstack/react-query";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { toast } from "sonner";
-import { Loader2, Sparkles, Wand2, Save } from "lucide-react";
+import { ChevronRight, Search } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { DOC_TYPES } from "@/lib/doc-types";
-import { generateDocument } from "@/lib/ai.functions";
-import { textToPdf } from "@/lib/pdf";
-import { saveDocument } from "@/lib/documents";
-import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/ai-create")({
   head: () => ({
