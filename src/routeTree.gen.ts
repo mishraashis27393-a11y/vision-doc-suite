@@ -18,6 +18,7 @@ import { Route as AuthenticatedImageToPdfRouteImport } from './routes/_authentic
 import { Route as AuthenticatedLibraryRouteImport } from './routes/_authenticated/library'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedScanRouteImport } from './routes/_authenticated/scan'
+import { Route as AuthenticatedCreateTypeRouteImport } from './routes/_authenticated/create.$type'
 import { Route as AuthenticatedDocIdRouteImport } from './routes/_authenticated/doc.$id'
 
 const IndexRoute = IndexRouteImport.update({
@@ -64,6 +65,11 @@ const AuthenticatedScanRoute = AuthenticatedScanRouteImport.update({
   path: '/scan',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedCreateTypeRoute = AuthenticatedCreateTypeRouteImport.update({
+  id: '/create/$type',
+  path: '/create/$type',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedDocIdRoute = AuthenticatedDocIdRouteImport.update({
   id: '/doc/$id',
   path: '/doc/$id',
@@ -79,6 +85,7 @@ export interface FileRoutesByFullPath {
   '/library': typeof AuthenticatedLibraryRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/scan': typeof AuthenticatedScanRoute
+  '/create/$type': typeof AuthenticatedCreateTypeRoute
   '/doc/$id': typeof AuthenticatedDocIdRoute
 }
 export interface FileRoutesByTo {
@@ -90,6 +97,7 @@ export interface FileRoutesByTo {
   '/library': typeof AuthenticatedLibraryRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/scan': typeof AuthenticatedScanRoute
+  '/create/$type': typeof AuthenticatedCreateTypeRoute
   '/doc/$id': typeof AuthenticatedDocIdRoute
 }
 export interface FileRoutesById {
@@ -103,6 +111,7 @@ export interface FileRoutesById {
   '/_authenticated/library': typeof AuthenticatedLibraryRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/scan': typeof AuthenticatedScanRoute
+  '/_authenticated/create/$type': typeof AuthenticatedCreateTypeRoute
   '/_authenticated/doc/$id': typeof AuthenticatedDocIdRoute
 }
 export interface FileRouteTypes {
@@ -116,6 +125,7 @@ export interface FileRouteTypes {
     | '/library'
     | '/profile'
     | '/scan'
+    | '/create/$type'
     | '/doc/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -127,6 +137,7 @@ export interface FileRouteTypes {
     | '/library'
     | '/profile'
     | '/scan'
+    | '/create/$type'
     | '/doc/$id'
   id:
     | '__root__'
@@ -139,6 +150,7 @@ export interface FileRouteTypes {
     | '/_authenticated/library'
     | '/_authenticated/profile'
     | '/_authenticated/scan'
+    | '/_authenticated/create/$type'
     | '/_authenticated/doc/$id'
   fileRoutesById: FileRoutesById
 }
@@ -213,6 +225,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedScanRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/create/$type': {
+      id: '/_authenticated/create/$type'
+      path: '/create/$type'
+      fullPath: '/create/$type'
+      preLoaderRoute: typeof AuthenticatedCreateTypeRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/doc/$id': {
       id: '/_authenticated/doc/$id'
       path: '/doc/$id'
@@ -230,6 +249,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedLibraryRoute: typeof AuthenticatedLibraryRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedScanRoute: typeof AuthenticatedScanRoute
+  AuthenticatedCreateTypeRoute: typeof AuthenticatedCreateTypeRoute
   AuthenticatedDocIdRoute: typeof AuthenticatedDocIdRoute
 }
 
@@ -240,6 +260,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedLibraryRoute: AuthenticatedLibraryRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedScanRoute: AuthenticatedScanRoute,
+  AuthenticatedCreateTypeRoute: AuthenticatedCreateTypeRoute,
   AuthenticatedDocIdRoute: AuthenticatedDocIdRoute,
 }
 
