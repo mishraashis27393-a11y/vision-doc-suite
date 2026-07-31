@@ -13,10 +13,10 @@ export const Route = createFileRoute("/")({
         content:
           "Create documents with AI, scan paper, convert images to PDF, and keep everything in your private, secure document library.",
       },
-      { property: "og:title", content: "D.Cr Library — AI Document Creator & Scanner" },
+      { property: "og:title", content: "D.Cr Library — AI Document Creator, Scanner & Library" },
       {
         property: "og:description",
-        content: "AI document creation, smart scanning, image-to-PDF and a private cloud library.",
+        content: "Create documents with AI, scan paper, convert images to PDF, and keep everything in your private, secure document library.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

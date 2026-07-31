@@ -78,17 +78,21 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "D.Cr Library — AI Documents, Scanner & Library" },
+      { title: "D.Cr Library — AI Document Creator, Scanner & Library" },
       {
         name: "description",
-        content: "Create documents with AI, scan paper, convert images to PDF and store everything privately.",
+        content: "Create documents with AI, scan paper, convert images to PDF, and keep everything in your private, secure document library.",
       },
       { name: "author", content: "D.Cr Library" },
-      { property: "og:title", content: "D.Cr Library" },
-      { property: "og:description", content: "AI document creation, scanning and a private cloud library." },
+      { property: "og:title", content: "D.Cr Library — AI Document Creator, Scanner & Library" },
+      { property: "og:description", content: "Create documents with AI, scan paper, convert images to PDF, and keep everything in your private, secure document library." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "D.Cr Library — AI Document Creator, Scanner & Library" },
+      { name: "twitter:description", content: "Create documents with AI, scan paper, convert images to PDF, and keep everything in your private, secure document library." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/af10a77c-716b-4ebd-9652-028821da79ef/id-preview-678ba80e--8b72b5b6-377b-427b-9572-a748aa844cd1.lovable.app-1785471503558.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/af10a77c-716b-4ebd-9652-028821da79ef/id-preview-678ba80e--8b72b5b6-377b-427b-9572-a748aa844cd1.lovable.app-1785471503558.png" },
     ],
     links: [
       {
