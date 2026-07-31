@@ -17,6 +17,7 @@ import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/h
 import { Route as AuthenticatedImageToPdfRouteImport } from './routes/_authenticated/image-to-pdf'
 import { Route as AuthenticatedLibraryRouteImport } from './routes/_authenticated/library'
 import { Route as AuthenticatedScanRouteImport } from './routes/_authenticated/scan'
+import { Route as AuthenticatedDocIdRouteImport } from './routes/_authenticated/doc.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -57,6 +58,11 @@ const AuthenticatedScanRoute = AuthenticatedScanRouteImport.update({
   path: '/scan',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedDocIdRoute = AuthenticatedDocIdRouteImport.update({
+  id: '/doc/$id',
+  path: '/doc/$id',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -66,6 +72,7 @@ export interface FileRoutesByFullPath {
   '/image-to-pdf': typeof AuthenticatedImageToPdfRoute
   '/library': typeof AuthenticatedLibraryRoute
   '/scan': typeof AuthenticatedScanRoute
+  '/doc/$id': typeof AuthenticatedDocIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -75,6 +82,7 @@ export interface FileRoutesByTo {
   '/image-to-pdf': typeof AuthenticatedImageToPdfRoute
   '/library': typeof AuthenticatedLibraryRoute
   '/scan': typeof AuthenticatedScanRoute
+  '/doc/$id': typeof AuthenticatedDocIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -86,6 +94,7 @@ export interface FileRoutesById {
   '/_authenticated/image-to-pdf': typeof AuthenticatedImageToPdfRoute
   '/_authenticated/library': typeof AuthenticatedLibraryRoute
   '/_authenticated/scan': typeof AuthenticatedScanRoute
+  '/_authenticated/doc/$id': typeof AuthenticatedDocIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -97,6 +106,7 @@ export interface FileRouteTypes {
     | '/image-to-pdf'
     | '/library'
     | '/scan'
+    | '/doc/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -106,6 +116,7 @@ export interface FileRouteTypes {
     | '/image-to-pdf'
     | '/library'
     | '/scan'
+    | '/doc/$id'
   id:
     | '__root__'
     | '/'
@@ -116,6 +127,7 @@ export interface FileRouteTypes {
     | '/_authenticated/image-to-pdf'
     | '/_authenticated/library'
     | '/_authenticated/scan'
+    | '/_authenticated/doc/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -182,6 +194,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedScanRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/doc/$id': {
+      id: '/_authenticated/doc/$id'
+      path: '/doc/$id'
+      fullPath: '/doc/$id'
+      preLoaderRoute: typeof AuthenticatedDocIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
@@ -191,6 +210,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedImageToPdfRoute: typeof AuthenticatedImageToPdfRoute
   AuthenticatedLibraryRoute: typeof AuthenticatedLibraryRoute
   AuthenticatedScanRoute: typeof AuthenticatedScanRoute
+  AuthenticatedDocIdRoute: typeof AuthenticatedDocIdRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -199,6 +219,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedImageToPdfRoute: AuthenticatedImageToPdfRoute,
   AuthenticatedLibraryRoute: AuthenticatedLibraryRoute,
   AuthenticatedScanRoute: AuthenticatedScanRoute,
+  AuthenticatedDocIdRoute: AuthenticatedDocIdRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
