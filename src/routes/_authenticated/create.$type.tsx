@@ -40,6 +40,9 @@ function CreateTypePage() {
   const def = DOC_TYPES.find((d) => d.id === type);
   const [fields, setFields] = useState<Record<string, string>>({});
   const [prompt, setPrompt] = useState("");
+  const [language, setLanguage] = useState("");
+  const [tone, setTone] = useState("");
+  const [style, setStyle] = useState("");
   const [busy, setBusy] = useState(false);
 
   if (!def) {
@@ -73,6 +76,9 @@ function CreateTypePage() {
           docType: def.id,
           prompt: prompt.trim() || `Create a professional ${def.label}.`,
           answers: details || "none",
+          language: language || undefined,
+          tone: tone || undefined,
+          style: style || undefined,
         },
       });
       const pdf = await textToPdf(out.title, out.content);
@@ -132,6 +138,21 @@ function CreateTypePage() {
             onChange={(e) => setPrompt(e.target.value)}
             placeholder={`Anything else the AI should know about this ${def.label.toLowerCase()}?`}
           />
+        </div>
+
+        <div className="grid grid-cols-3 gap-3">
+          <div className="space-y-1.5">
+            <Label htmlFor="language">Language</Label>
+            <Input id="language" maxLength={40} value={language} onChange={(e) => setLanguage(e.target.value)} placeholder="English" />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="tone">Tone</Label>
+            <Input id="tone" maxLength={40} value={tone} onChange={(e) => setTone(e.target.value)} placeholder="Formal" />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="style">Style</Label>
+            <Input id="style" maxLength={40} value={style} onChange={(e) => setStyle(e.target.value)} placeholder="Concise" />
+          </div>
         </div>
 
         <Button className="w-full rounded-full" disabled={busy} onClick={submit}>

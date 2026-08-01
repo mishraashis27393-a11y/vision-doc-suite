@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { ChevronRight, Search } from "lucide-react";
+import { ChevronRight, Palette, Search } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { Input } from "@/components/ui/input";
 import { DOC_TYPES } from "@/lib/doc-types";
@@ -36,6 +36,20 @@ function AiCreatePage() {
           aria-label="Search document types"
         />
       </div>
+
+      <Link
+        to="/ai-design"
+        className="surface-card animate-rise mt-4 flex items-center gap-3 p-4 transition-transform active:scale-[0.98]"
+      >
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-soft">
+          <Palette className="h-5 w-5 text-brand-ink" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-sm font-semibold">AI Design Generator</span>
+          <span className="block truncate text-[11px] text-muted-foreground">Posters, banners, logos, visiting cards, thumbnails…</span>
+        </span>
+        <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+      </Link>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         {types.map((t, i) => (
