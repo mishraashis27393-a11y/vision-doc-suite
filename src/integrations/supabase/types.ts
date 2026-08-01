@@ -115,6 +115,8 @@ export type Database = {
           created_at: string
           display_name: string | null
           id: string
+          library_pin_hash: string | null
+          library_pin_updated_at: string | null
           phone: string | null
           updated_at: string
         }
@@ -123,6 +125,8 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id: string
+          library_pin_hash?: string | null
+          library_pin_updated_at?: string | null
           phone?: string | null
           updated_at?: string
         }
@@ -131,6 +135,8 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
+          library_pin_hash?: string | null
+          library_pin_updated_at?: string | null
           phone?: string | null
           updated_at?: string
         }

@@ -1,3 +1,5 @@
+import { DESIGN_TYPES } from "./design-types";
+
 export type DocTypeDef = {
   id: string;
   label: string;
@@ -33,11 +35,11 @@ export const DOC_TYPES: DocTypeDef[] = [
 ];
 
 export function docTypeLabel(id: string) {
-  return DOC_TYPES.find((d) => d.id === id)?.label ?? "Document";
+  return DOC_TYPES.find((d) => d.id === id)?.label ?? DESIGN_TYPES.find((d) => d.id === id)?.label ?? "Document";
 }
 
 export function docTypeEmoji(id: string) {
-  return DOC_TYPES.find((d) => d.id === id)?.emoji ?? "📄";
+  return DOC_TYPES.find((d) => d.id === id)?.emoji ?? DESIGN_TYPES.find((d) => d.id === id)?.emoji ?? "📄";
 }
 
 export function formatBytes(bytes: number) {

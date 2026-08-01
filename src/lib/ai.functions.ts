@@ -1,11 +1,24 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
+import { callGateway, generateDesignImage } from "./ai.server";
 
 const GenerateInput = z.object({
   docType: z.string().min(1),
   prompt: z.string().min(3).max(4000),
   answers: z.string().max(4000).optional(),
+  language: z.string().max(60).optional(),
+  tone: z.string().max(60).optional(),
+  style: z.string().max(60).optional(),
+});
+
+const DesignInput = z.object({
+  designType: z.string().min(1),
+  prompt: z.string().min(3).max(2000),
+  details: z.string().max(2000).optional(),
+  style: z.string().max(60).optional(),
+  colors: z.string().max(80).optional(),
+  aspect: z.enum(["portrait", "landscape", "square"]).default("portrait"),
 });
 
 const SummarizeInput = z.object({
@@ -14,35 +27,10 @@ const SummarizeInput = z.object({
   pageCount: z.number().int().positive().optional(),
 });
 
-async function callGateway(system: string, user: string) {
-  const key = process.env.LOVABLE_API_KEY;
-  if (!key) throw new Error("AI is not configured yet.");
-
-  const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "Lovable-API-Key": key },
-    body: JSON.stringify({
-      model: "google/gemini-3.6-flash",
-      response_format: { type: "json_object" },
-      messages: [
-        { role: "system", content: system },
-        { role: "user", content: user },
-      ],
-    }),
-  });
-
-  if (res.status === 429) throw new Error("Too many requests right now. Please try again in a moment.");
-  if (res.status === 402) throw new Error("AI credits are exhausted. Please add credits to continue.");
-  if (!res.ok) throw new Error(`AI request failed (${res.status}).`);
-
-  const json = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
-  const raw = json.choices?.[0]?.message?.content ?? "{}";
-  try {
-    return JSON.parse(raw) as Record<string, unknown>;
-  } catch {
-    return { content: raw } as Record<string, unknown>;
-  }
-}
+export const generateDesign = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => DesignInput.parse(input))
+  .handler(async ({ data }) => generateDesignImage(data));
 
 export const generateDocument = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -63,6 +51,9 @@ export const generateDocument = createServerFn({ method: "POST" })
       `Document type: ${data.docType}`,
       `User request: ${data.prompt}`,
       data.answers ? `Additional details provided by the user: ${data.answers}` : "",
+      data.language ? `Write the document in ${data.language}.` : "",
+      data.tone ? `Tone: ${data.tone}.` : "",
+      data.style ? `Formatting style: ${data.style}.` : "",
     ]
       .filter(Boolean)
       .join("\n");

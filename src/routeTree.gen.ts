@@ -13,12 +13,14 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedAiCreateRouteImport } from './routes/_authenticated/ai-create'
+import { Route as AuthenticatedAiDesignRouteImport } from './routes/_authenticated/ai-design'
 import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/home'
 import { Route as AuthenticatedImageToPdfRouteImport } from './routes/_authenticated/image-to-pdf'
 import { Route as AuthenticatedLibraryRouteImport } from './routes/_authenticated/library'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedScanRouteImport } from './routes/_authenticated/scan'
 import { Route as AuthenticatedCreateTypeRouteImport } from './routes/_authenticated/create.$type'
+import { Route as AuthenticatedDesignTypeRouteImport } from './routes/_authenticated/design.$type'
 import { Route as AuthenticatedDocIdRouteImport } from './routes/_authenticated/doc.$id'
 
 const IndexRoute = IndexRouteImport.update({
@@ -38,6 +40,11 @@ const AuthRoute = AuthRouteImport.update({
 const AuthenticatedAiCreateRoute = AuthenticatedAiCreateRouteImport.update({
   id: '/ai-create',
   path: '/ai-create',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAiDesignRoute = AuthenticatedAiDesignRouteImport.update({
+  id: '/ai-design',
+  path: '/ai-design',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedHomeRoute = AuthenticatedHomeRouteImport.update({
@@ -70,6 +77,11 @@ const AuthenticatedCreateTypeRoute = AuthenticatedCreateTypeRouteImport.update({
   path: '/create/$type',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedDesignTypeRoute = AuthenticatedDesignTypeRouteImport.update({
+  id: '/design/$type',
+  path: '/design/$type',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedDocIdRoute = AuthenticatedDocIdRouteImport.update({
   id: '/doc/$id',
   path: '/doc/$id',
@@ -80,24 +92,28 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/ai-create': typeof AuthenticatedAiCreateRoute
+  '/ai-design': typeof AuthenticatedAiDesignRoute
   '/home': typeof AuthenticatedHomeRoute
   '/image-to-pdf': typeof AuthenticatedImageToPdfRoute
   '/library': typeof AuthenticatedLibraryRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/scan': typeof AuthenticatedScanRoute
   '/create/$type': typeof AuthenticatedCreateTypeRoute
+  '/design/$type': typeof AuthenticatedDesignTypeRoute
   '/doc/$id': typeof AuthenticatedDocIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/ai-create': typeof AuthenticatedAiCreateRoute
+  '/ai-design': typeof AuthenticatedAiDesignRoute
   '/home': typeof AuthenticatedHomeRoute
   '/image-to-pdf': typeof AuthenticatedImageToPdfRoute
   '/library': typeof AuthenticatedLibraryRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/scan': typeof AuthenticatedScanRoute
   '/create/$type': typeof AuthenticatedCreateTypeRoute
+  '/design/$type': typeof AuthenticatedDesignTypeRoute
   '/doc/$id': typeof AuthenticatedDocIdRoute
 }
 export interface FileRoutesById {
@@ -106,12 +122,14 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/ai-create': typeof AuthenticatedAiCreateRoute
+  '/_authenticated/ai-design': typeof AuthenticatedAiDesignRoute
   '/_authenticated/home': typeof AuthenticatedHomeRoute
   '/_authenticated/image-to-pdf': typeof AuthenticatedImageToPdfRoute
   '/_authenticated/library': typeof AuthenticatedLibraryRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/scan': typeof AuthenticatedScanRoute
   '/_authenticated/create/$type': typeof AuthenticatedCreateTypeRoute
+  '/_authenticated/design/$type': typeof AuthenticatedDesignTypeRoute
   '/_authenticated/doc/$id': typeof AuthenticatedDocIdRoute
 }
 export interface FileRouteTypes {
@@ -120,24 +138,28 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/ai-create'
+    | '/ai-design'
     | '/home'
     | '/image-to-pdf'
     | '/library'
     | '/profile'
     | '/scan'
     | '/create/$type'
+    | '/design/$type'
     | '/doc/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
     | '/ai-create'
+    | '/ai-design'
     | '/home'
     | '/image-to-pdf'
     | '/library'
     | '/profile'
     | '/scan'
     | '/create/$type'
+    | '/design/$type'
     | '/doc/$id'
   id:
     | '__root__'
@@ -145,12 +167,14 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/ai-create'
+    | '/_authenticated/ai-design'
     | '/_authenticated/home'
     | '/_authenticated/image-to-pdf'
     | '/_authenticated/library'
     | '/_authenticated/profile'
     | '/_authenticated/scan'
     | '/_authenticated/create/$type'
+    | '/_authenticated/design/$type'
     | '/_authenticated/doc/$id'
   fileRoutesById: FileRoutesById
 }
@@ -188,6 +212,13 @@ declare module '@tanstack/react-router' {
       path: '/ai-create'
       fullPath: '/ai-create'
       preLoaderRoute: typeof AuthenticatedAiCreateRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/ai-design': {
+      id: '/_authenticated/ai-design'
+      path: '/ai-design'
+      fullPath: '/ai-design'
+      preLoaderRoute: typeof AuthenticatedAiDesignRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/home': {
@@ -232,6 +263,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCreateTypeRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/design/$type': {
+      id: '/_authenticated/design/$type'
+      path: '/design/$type'
+      fullPath: '/design/$type'
+      preLoaderRoute: typeof AuthenticatedDesignTypeRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/doc/$id': {
       id: '/_authenticated/doc/$id'
       path: '/doc/$id'
@@ -244,23 +282,27 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAiCreateRoute: typeof AuthenticatedAiCreateRoute
+  AuthenticatedAiDesignRoute: typeof AuthenticatedAiDesignRoute
   AuthenticatedHomeRoute: typeof AuthenticatedHomeRoute
   AuthenticatedImageToPdfRoute: typeof AuthenticatedImageToPdfRoute
   AuthenticatedLibraryRoute: typeof AuthenticatedLibraryRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedScanRoute: typeof AuthenticatedScanRoute
   AuthenticatedCreateTypeRoute: typeof AuthenticatedCreateTypeRoute
+  AuthenticatedDesignTypeRoute: typeof AuthenticatedDesignTypeRoute
   AuthenticatedDocIdRoute: typeof AuthenticatedDocIdRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAiCreateRoute: AuthenticatedAiCreateRoute,
+  AuthenticatedAiDesignRoute: AuthenticatedAiDesignRoute,
   AuthenticatedHomeRoute: AuthenticatedHomeRoute,
   AuthenticatedImageToPdfRoute: AuthenticatedImageToPdfRoute,
   AuthenticatedLibraryRoute: AuthenticatedLibraryRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedScanRoute: AuthenticatedScanRoute,
   AuthenticatedCreateTypeRoute: AuthenticatedCreateTypeRoute,
+  AuthenticatedDesignTypeRoute: AuthenticatedDesignTypeRoute,
   AuthenticatedDocIdRoute: AuthenticatedDocIdRoute,
 }
 
