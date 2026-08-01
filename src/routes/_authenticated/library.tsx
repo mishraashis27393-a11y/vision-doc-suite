@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { listDocuments, listFolders, createFolder, updateDocument } from "@/lib/documents";
 import { docTypeEmoji, formatBytes } from "@/lib/doc-types";
 import { cn } from "@/lib/utils";
+import { LibraryLock } from "@/components/LibraryLock";
 
 type Search = { view?: "all" | "favorites"; folder?: string };
 
@@ -27,8 +28,16 @@ export const Route = createFileRoute("/_authenticated/library")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  component: LibraryPage,
+  component: LibraryRoute,
 });
+
+function LibraryRoute() {
+  return (
+    <LibraryLock>
+      <LibraryPage />
+    </LibraryLock>
+  );
+}
 
 function LibraryPage() {
   const { view, folder } = Route.useSearch();
