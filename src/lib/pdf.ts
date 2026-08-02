@@ -301,7 +301,7 @@ export async function pdfToJpegs(source: Blob | ArrayBuffer | string, scale = 3)
     await page.render({ canvas, canvasContext: ctx, viewport }).promise;
     out.push(canvas.toDataURL("image/jpeg", 0.95));
   }
-  await pdf.destroy();
+  await pdf.cleanup();
   return out;
 }
 
