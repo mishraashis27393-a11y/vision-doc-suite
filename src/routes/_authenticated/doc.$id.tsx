@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { ArrowLeft, Brain, Download, Loader2, QrCode, Share2, Star, Trash2 } from "lucide-react";
+import { ArrowLeft, Brain, Download, ImageDown, Loader2, QrCode, Share2, Star, Trash2 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,7 +14,7 @@ import {
   updateDocument,
 } from "@/lib/documents";
 import { docTypeLabel, formatBytes } from "@/lib/doc-types";
-import { makeQrDataUrl } from "@/lib/pdf";
+import { downloadDataUrl, makeQrDataUrl, pdfToJpegs } from "@/lib/pdf";
 import { summarizeDocument } from "@/lib/ai.functions";
 import { cn } from "@/lib/utils";
 
@@ -42,6 +42,8 @@ function DocPage() {
   const [url, setUrl] = useState<string | null>(null);
   const [qr, setQr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [qrBusy, setQrBusy] = useState(false);
+  const [jpgBusy, setJpgBusy] = useState(false);
 
   useEffect(() => {
     if (!doc?.file_path) return;
@@ -73,12 +75,45 @@ function DocPage() {
   };
 
   const showQr = async () => {
-    if (!doc?.file_path) return;
+    if (!doc?.file_path) {
+      toast.error("This document has no file to link to yet.");
+      return;
+    }
+    if (qr) {
+      setQr(null);
+      return;
+    }
+    setQrBusy(true);
     try {
       const link = await signedUrl(doc.file_path, 60 * 60 * 24 * 7);
       setQr(await makeQrDataUrl(link));
-    } catch {
-      toast.error("Could not create the QR code.");
+      toast.success("QR code ready.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not create the QR code.");
+    } finally {
+      setQrBusy(false);
+    }
+  };
+
+  const downloadJpg = async () => {
+    if (!doc || !url) {
+      toast.error("The file is still loading. Try again in a second.");
+      return;
+    }
+    setJpgBusy(true);
+    const id = toast.loading("Rendering high-quality JPG…");
+    try {
+      const pages = await pdfToJpegs(url);
+      if (pages.length === 0) throw new Error("Nothing to export.");
+      const safe = doc.title.replace(/[^\w\d\-. ]+/g, "").trim() || "document";
+      pages.forEach((page, i) =>
+        downloadDataUrl(page, pages.length === 1 ? `${safe}.jpg` : `${safe}-page-${i + 1}.jpg`),
+      );
+      toast.success(`${pages.length} JPG${pages.length === 1 ? "" : "s"} downloaded.`, { id });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not export as JPG.", { id });
+    } finally {
+      setJpgBusy(false);
     }
   };
 
@@ -151,8 +186,9 @@ function DocPage() {
 
       <div className="mt-4 grid grid-cols-4 gap-2">
         <Action icon={Download} label="Download" onClick={() => url && downloadUrl(url, `${doc.title}.pdf`)} />
+        <Action icon={jpgBusy ? Loader2 : ImageDown} label="JPG" spin={jpgBusy} onClick={downloadJpg} />
         <Action icon={Share2} label="Share" onClick={share} />
-        <Action icon={QrCode} label="QR code" onClick={showQr} />
+        <Action icon={qrBusy ? Loader2 : QrCode} label="QR code" spin={qrBusy} onClick={showQr} />
         <Action icon={Star} label="Favorite" active={doc.is_favorite} onClick={toggleFav} />
       </div>
 
@@ -160,6 +196,14 @@ function DocPage() {
         <div className="surface-card mt-4 flex flex-col items-center gap-2 p-5">
           <img src={qr} alt={`QR code for ${doc.title}`} className="h-40 w-40 rounded-xl" />
           <p className="text-[11px] text-muted-foreground">Scan to open this document (link valid for 7 days).</p>
+          <Button
+            size="sm"
+            variant="outline"
+            className="rounded-full"
+            onClick={() => downloadDataUrl(qr, `${doc.title.replace(/[^\w\d\-. ]+/g, "").trim() || "document"}-qr.png`)}
+          >
+            <Download className="mr-2 h-3.5 w-3.5" /> Save QR code
+          </Button>
         </div>
       )}
 
@@ -188,18 +232,21 @@ function Action({
   label,
   onClick,
   active,
+  spin,
 }: {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   onClick: () => void;
   active?: boolean;
+  spin?: boolean;
 }) {
   return (
     <button
       onClick={onClick}
+      disabled={spin}
       className="surface-card flex flex-col items-center gap-1.5 p-3 text-[11px] font-semibold transition-transform active:scale-95"
     >
-      <Icon className={cn("h-4 w-4", active ? "text-warning" : "text-brand-ink")} />
+      <Icon className={cn("h-4 w-4", active ? "text-warning" : "text-brand-ink", spin && "animate-spin")} />
       {label}
     </button>
   );
