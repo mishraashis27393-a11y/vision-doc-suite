@@ -1,9 +1,23 @@
 export function parseJson(raw: string): Record<string, unknown> {
-  const cleaned = raw.trim().replace(/^```(?:json)?/i, "").replace(/```$/, "");
+  const cleaned = raw
+    .trim()
+    .replace(/^```(?:json)?/i, "")
+    .replace(/```$/, "")
+    .trim();
   try {
     return JSON.parse(cleaned) as Record<string, unknown>;
   } catch {
-    return { content: raw };
+    // Models occasionally wrap the JSON in prose — recover the outermost object.
+    const start = cleaned.indexOf("{");
+    const end = cleaned.lastIndexOf("}");
+    if (start !== -1 && end > start) {
+      try {
+        return JSON.parse(cleaned.slice(start, end + 1)) as Record<string, unknown>;
+      } catch {
+        /* fall through */
+      }
+    }
+    return { content: cleaned || raw };
   }
 }
 
@@ -34,6 +48,8 @@ async function callGemini(system: string, user: string) {
   return parseJson(raw);
 }
 
+const CHAT_MODELS = ["google/gemini-3.6-flash", "google/gemini-2.5-flash"];
+
 export async function callGateway(system: string, user: string) {
   const viaGemini = await callGemini(system, user);
   if (viaGemini) return viaGemini;
@@ -41,28 +57,41 @@ export async function callGateway(system: string, user: string) {
   const key = process.env.LOVABLE_API_KEY;
   if (!key) throw new Error("AI is not configured yet.");
 
-  const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "Lovable-API-Key": key },
-    body: JSON.stringify({
-      model: "google/gemini-3.6-flash",
-      response_format: { type: "json_object" },
-      messages: [
-        { role: "system", content: system },
-        { role: "user", content: user },
-      ],
-    }),
-  });
+  let lastError = "AI request failed.";
+  for (const model of CHAT_MODELS) {
+    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Lovable-API-Key": key },
+      body: JSON.stringify({
+        model,
+        response_format: { type: "json_object" },
+        messages: [
+          { role: "system", content: system },
+          { role: "user", content: user },
+        ],
+      }),
+    });
 
-  if (res.status === 429) throw new Error("Too many requests right now. Please try again in a moment.");
-  if (res.status === 402) throw new Error("AI credits are exhausted. Please add credits to continue.");
-  if (!res.ok) throw new Error(`AI request failed (${res.status}).`);
+    if (res.status === 429) throw new Error("Too many requests right now. Please try again in a moment.");
+    if (res.status === 402) throw new Error("AI credits are exhausted. Please add credits to continue.");
+    if (!res.ok) {
+      lastError = `AI request failed (${res.status}).`;
+      continue; // try the next model
+    }
 
-  const json = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
-  const raw = json.choices?.[0]?.message?.content ?? "{}";
-  return parseJson(raw);
+    const json = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
+    const raw = json.choices?.[0]?.message?.content ?? "";
+    if (!raw.trim()) {
+      lastError = "The AI returned an empty response.";
+      continue;
+    }
+    return parseJson(raw);
+  }
+  throw new Error(`${lastError} Please try again.`);
 }
 
+
+const IMAGE_MODELS = ["google/gemini-3.1-flash-image", "google/gemini-2.5-flash-image"];
 
 export async function generateDesignImage(data: {
   designType: string;
@@ -87,24 +116,31 @@ export async function generateDesignImage(data: {
     .filter(Boolean)
     .join("\n");
 
-  const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "Lovable-API-Key": key },
-    body: JSON.stringify({
-      model: "google/gemini-3.1-flash-image",
-      modalities: ["image", "text"],
-      messages: [{ role: "user", content: prompt }],
-    }),
-  });
+  let lastError = "Design generation failed.";
+  for (const model of IMAGE_MODELS) {
+    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Lovable-API-Key": key },
+      body: JSON.stringify({
+        model,
+        modalities: ["image", "text"],
+        messages: [{ role: "user", content: prompt }],
+      }),
+    });
 
-  if (res.status === 429) throw new Error("Too many requests right now. Please try again in a moment.");
-  if (res.status === 402) throw new Error("AI credits are exhausted. Please add credits to continue.");
-  if (!res.ok) throw new Error(`Design generation failed (${res.status}).`);
+    if (res.status === 429) throw new Error("Too many requests right now. Please try again in a moment.");
+    if (res.status === 402) throw new Error("AI credits are exhausted. Please add credits to continue.");
+    if (!res.ok) {
+      lastError = `Design generation failed (${res.status}).`;
+      continue;
+    }
 
-  const json = (await res.json()) as {
-    choices?: Array<{ message?: { images?: Array<{ image_url?: { url?: string } }> } }>;
-  };
-  const image = json.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-  if (!image) throw new Error("The AI did not return a design. Try adjusting your prompt.");
-  return { image };
+    const json = (await res.json()) as {
+      choices?: Array<{ message?: { images?: Array<{ image_url?: { url?: string } }> } }>;
+    };
+    const image = json.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+    if (image) return { image };
+    lastError = "The AI did not return a design. Try adjusting your prompt.";
+  }
+  throw new Error(lastError);
 }
