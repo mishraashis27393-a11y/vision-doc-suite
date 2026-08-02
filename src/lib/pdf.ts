@@ -276,7 +276,7 @@ export async function makeQrDataUrl(text: string) {
 /** Renders every page of a PDF to a high-quality JPEG data URL (pixel-accurate to the PDF). */
 export async function pdfToJpegs(source: Blob | ArrayBuffer | string, scale = 3): Promise<string[]> {
   const pdfjs = await import("pdfjs-dist");
-  const worker = await import("pdfjs-dist/build/pdf.worker.mjs?url");
+  const worker = await import("pdfjs-dist/build/pdf.worker.min.mjs?url");
   pdfjs.GlobalWorkerOptions.workerSrc = (worker as { default: string }).default;
 
   let data: ArrayBuffer;
@@ -298,7 +298,7 @@ export async function pdfToJpegs(source: Blob | ArrayBuffer | string, scale = 3)
     const ctx = canvas.getContext("2d")!;
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    await page.render({ canvas, canvasContext: ctx, viewport }).promise;
+    await page.render({ canvasContext: ctx, viewport }).promise;
     out.push(canvas.toDataURL("image/jpeg", 0.95));
   }
   await pdf.cleanup();
