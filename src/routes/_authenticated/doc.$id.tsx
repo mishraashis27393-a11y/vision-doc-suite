@@ -184,7 +184,7 @@ function DocPage() {
         )}
       </div>
 
-      <div className="mt-4 grid grid-cols-4 gap-2">
+      <div className="mt-4 grid grid-cols-5 gap-2">
         <Action icon={Download} label="Download" onClick={() => url && downloadUrl(url, `${doc.title}.pdf`)} />
         <Action icon={jpgBusy ? Loader2 : ImageDown} label="JPG" spin={jpgBusy} onClick={downloadJpg} />
         <Action icon={Share2} label="Share" onClick={share} />
