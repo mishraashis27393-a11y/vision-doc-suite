@@ -259,6 +259,57 @@ function autoCrop(canvas: HTMLCanvasElement) {
 }
 
 export async function makeQrDataUrl(text: string) {
-  const QRCode = (await import("qrcode")).default;
-  return QRCode.toDataURL(text, { width: 512, margin: 1, color: { dark: "#1c3faa", light: "#ffffff" } });
+  const mod = (await import("qrcode")) as unknown as {
+    default?: typeof import("qrcode");
+    toDataURL?: typeof import("qrcode").toDataURL;
+  };
+  const QRCode = mod.default ?? (mod as unknown as typeof import("qrcode"));
+  if (typeof QRCode?.toDataURL !== "function") throw new Error("QR generator unavailable");
+  return QRCode.toDataURL(text, {
+    errorCorrectionLevel: "M",
+    width: 640,
+    margin: 2,
+    color: { dark: "#1c3faa", light: "#ffffff" },
+  });
+}
+
+/** Renders every page of a PDF to a high-quality JPEG data URL (pixel-accurate to the PDF). */
+export async function pdfToJpegs(source: Blob | ArrayBuffer | string, scale = 3): Promise<string[]> {
+  const pdfjs = await import("pdfjs-dist");
+  const worker = await import("pdfjs-dist/build/pdf.worker.mjs?url");
+  pdfjs.GlobalWorkerOptions.workerSrc = (worker as { default: string }).default;
+
+  let data: ArrayBuffer;
+  if (typeof source === "string") data = await (await fetch(source)).arrayBuffer();
+  else if (source instanceof Blob) data = await source.arrayBuffer();
+  else data = source;
+
+  const pdf = await pdfjs.getDocument({ data: new Uint8Array(data) }).promise;
+  const out: string[] = [];
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    // Cap the raster so very large pages stay within mobile canvas limits.
+    const base = page.getViewport({ scale: 1 });
+    const safeScale = Math.min(scale, 4000 / Math.max(base.width, base.height));
+    const viewport = page.getViewport({ scale: Math.max(1.5, safeScale) });
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.ceil(viewport.width);
+    canvas.height = Math.ceil(viewport.height);
+    const ctx = canvas.getContext("2d")!;
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    await page.render({ canvas, canvasContext: ctx, viewport }).promise;
+    out.push(canvas.toDataURL("image/jpeg", 0.95));
+  }
+  await pdf.destroy();
+  return out;
+}
+
+export function downloadDataUrl(dataUrl: string, filename: string) {
+  const a = document.createElement("a");
+  a.href = dataUrl;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
 }
