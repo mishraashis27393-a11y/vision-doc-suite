@@ -93,6 +93,61 @@ export async function callGateway(system: string, user: string) {
 
 const IMAGE_MODELS = ["google/gemini-3.1-flash-image", "google/gemini-2.5-flash-image"];
 
+/** OCR: reads all visible text out of a page image (data URL). */
+export async function ocrImageText(dataUrl: string) {
+  const geminiKey = process.env.GEMINI_API_KEY;
+  const base64 = dataUrl.split(",")[1] ?? "";
+  const mime = dataUrl.slice(5, dataUrl.indexOf(";")) || "image/jpeg";
+  const instruction =
+    "Extract every readable line of text from this scanned page. Preserve reading order and line breaks. Reply with plain text only, no commentary.";
+
+  if (geminiKey) {
+    const res = await fetch(
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-goog-api-key": geminiKey },
+        body: JSON.stringify({
+          contents: [{ role: "user", parts: [{ text: instruction }, { inline_data: { mime_type: mime, data: base64 } }] }],
+        }),
+      },
+    );
+    if (res.ok) {
+      const json = (await res.json()) as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> };
+      const text = json.candidates?.[0]?.content?.parts?.map((p) => p.text ?? "").join("") ?? "";
+      if (text.trim()) return text.trim();
+    }
+  }
+
+  const key = process.env.LOVABLE_API_KEY;
+  if (!key) throw new Error("OCR is not configured yet.");
+  for (const model of CHAT_MODELS) {
+    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Lovable-API-Key": key },
+      body: JSON.stringify({
+        model,
+        messages: [
+          {
+            role: "user",
+            content: [
+              { type: "text", text: instruction },
+              { type: "image_url", image_url: { url: dataUrl } },
+            ],
+          },
+        ],
+      }),
+    });
+    if (res.status === 429) throw new Error("Too many requests right now. Please try again in a moment.");
+    if (res.status === 402) throw new Error("AI credits are exhausted. Please add credits to continue.");
+    if (!res.ok) continue;
+    const json = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
+    const text = json.choices?.[0]?.message?.content ?? "";
+    if (text.trim()) return text.trim();
+  }
+  throw new Error("Could not read text from this page.");
+}
+
 export async function generateDesignImage(data: {
   designType: string;
   prompt: string;
