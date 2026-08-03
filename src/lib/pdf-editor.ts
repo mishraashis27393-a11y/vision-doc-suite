@@ -383,6 +383,27 @@ export async function compressPdf(bytes: Uint8Array, quality = 0.6, scale = 1.6)
 }
 
 /** Extracts the text layer of every page (empty for scanned PDFs — use OCR). */
+export async function renderPageImage(bytes: Uint8Array, index: number, scale = 2, quality = 0.9) {
+  const pdfjs = await import("pdfjs-dist");
+  const worker = await import("pdfjs-dist/build/pdf.worker.min.mjs?url");
+  pdfjs.GlobalWorkerOptions.workerSrc = (worker as { default: string }).default;
+  const pdf = await pdfjs.getDocument({ data: new Uint8Array(bytes) }).promise;
+  const page = await pdf.getPage(index + 1);
+  const base = page.getViewport({ scale: 1 });
+  const safe = Math.min(scale, 3200 / Math.max(base.width, base.height));
+  const viewport = page.getViewport({ scale: Math.max(0.2, safe) });
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.ceil(viewport.width);
+  canvas.height = Math.ceil(viewport.height);
+  const ctx = canvas.getContext("2d")!;
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  await page.render({ canvasContext: ctx, viewport }).promise;
+  const url = canvas.toDataURL("image/jpeg", quality);
+  await pdf.cleanup();
+  return url;
+}
+
 export async function extractPdfText(bytes: Uint8Array): Promise<string[]> {
   const pdfjs = await import("pdfjs-dist");
   const worker = await import("pdfjs-dist/build/pdf.worker.min.mjs?url");
