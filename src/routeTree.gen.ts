@@ -18,6 +18,7 @@ import { Route as AuthenticatedAiDesignRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/home'
 import { Route as AuthenticatedImageToPdfRouteImport } from './routes/_authenticated/image-to-pdf'
 import { Route as AuthenticatedLibraryRouteImport } from './routes/_authenticated/library'
+import { Route as AuthenticatedPdfEditorRouteImport } from './routes/_authenticated/pdf-editor'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedScanRouteImport } from './routes/_authenticated/scan'
 import { Route as AuthenticatedCreateTypeRouteImport } from './routes/_authenticated/create.$type'
@@ -68,6 +69,11 @@ const AuthenticatedLibraryRoute = AuthenticatedLibraryRouteImport.update({
   path: '/library',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedPdfEditorRoute = AuthenticatedPdfEditorRouteImport.update({
+  id: '/pdf-editor',
+  path: '/pdf-editor',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
@@ -103,6 +109,7 @@ export interface FileRoutesByFullPath {
   '/home': typeof AuthenticatedHomeRoute
   '/image-to-pdf': typeof AuthenticatedImageToPdfRoute
   '/library': typeof AuthenticatedLibraryRoute
+  '/pdf-editor': typeof AuthenticatedPdfEditorRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/scan': typeof AuthenticatedScanRoute
   '/create/$type': typeof AuthenticatedCreateTypeRoute
@@ -118,6 +125,7 @@ export interface FileRoutesByTo {
   '/home': typeof AuthenticatedHomeRoute
   '/image-to-pdf': typeof AuthenticatedImageToPdfRoute
   '/library': typeof AuthenticatedLibraryRoute
+  '/pdf-editor': typeof AuthenticatedPdfEditorRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/scan': typeof AuthenticatedScanRoute
   '/create/$type': typeof AuthenticatedCreateTypeRoute
@@ -135,6 +143,7 @@ export interface FileRoutesById {
   '/_authenticated/home': typeof AuthenticatedHomeRoute
   '/_authenticated/image-to-pdf': typeof AuthenticatedImageToPdfRoute
   '/_authenticated/library': typeof AuthenticatedLibraryRoute
+  '/_authenticated/pdf-editor': typeof AuthenticatedPdfEditorRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/scan': typeof AuthenticatedScanRoute
   '/_authenticated/create/$type': typeof AuthenticatedCreateTypeRoute
@@ -152,6 +161,7 @@ export interface FileRouteTypes {
     | '/home'
     | '/image-to-pdf'
     | '/library'
+    | '/pdf-editor'
     | '/profile'
     | '/scan'
     | '/create/$type'
@@ -167,6 +177,7 @@ export interface FileRouteTypes {
     | '/home'
     | '/image-to-pdf'
     | '/library'
+    | '/pdf-editor'
     | '/profile'
     | '/scan'
     | '/create/$type'
@@ -183,6 +194,7 @@ export interface FileRouteTypes {
     | '/_authenticated/home'
     | '/_authenticated/image-to-pdf'
     | '/_authenticated/library'
+    | '/_authenticated/pdf-editor'
     | '/_authenticated/profile'
     | '/_authenticated/scan'
     | '/_authenticated/create/$type'
@@ -261,6 +273,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedLibraryRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/pdf-editor': {
+      id: '/_authenticated/pdf-editor'
+      path: '/pdf-editor'
+      fullPath: '/pdf-editor'
+      preLoaderRoute: typeof AuthenticatedPdfEditorRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/profile': {
       id: '/_authenticated/profile'
       path: '/profile'
@@ -306,6 +325,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedHomeRoute: typeof AuthenticatedHomeRoute
   AuthenticatedImageToPdfRoute: typeof AuthenticatedImageToPdfRoute
   AuthenticatedLibraryRoute: typeof AuthenticatedLibraryRoute
+  AuthenticatedPdfEditorRoute: typeof AuthenticatedPdfEditorRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedScanRoute: typeof AuthenticatedScanRoute
   AuthenticatedCreateTypeRoute: typeof AuthenticatedCreateTypeRoute
@@ -320,6 +340,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedHomeRoute: AuthenticatedHomeRoute,
   AuthenticatedImageToPdfRoute: AuthenticatedImageToPdfRoute,
   AuthenticatedLibraryRoute: AuthenticatedLibraryRoute,
+  AuthenticatedPdfEditorRoute: AuthenticatedPdfEditorRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedScanRoute: AuthenticatedScanRoute,
   AuthenticatedCreateTypeRoute: AuthenticatedCreateTypeRoute,

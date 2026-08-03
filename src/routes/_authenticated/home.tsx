@@ -12,6 +12,7 @@ import {
   Clock,
   FileText,
   Palette,
+  FileEdit,
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { listDocuments } from "@/lib/documents";
@@ -33,6 +34,7 @@ export const Route = createFileRoute("/_authenticated/home")({
 
 const ACTIONS = [
   { to: "/ai-create", label: "AI Create", icon: Sparkles, tint: "from-brand to-brand" },
+  { to: "/pdf-editor", label: "PDF Editor", icon: FileEdit },
   { to: "/ai-design", label: "AI Design", icon: Palette },
   { to: "/scan", label: "Scan Document", icon: ScanLine },
   { to: "/image-to-pdf", label: "Image to PDF", icon: Images },
