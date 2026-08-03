@@ -12,6 +12,7 @@ import {
   Clock,
   FileText,
   Palette,
+  FileEdit,
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { listDocuments } from "@/lib/documents";
@@ -33,6 +34,7 @@ export const Route = createFileRoute("/_authenticated/home")({
 
 const ACTIONS = [
   { to: "/ai-create", label: "AI Create", icon: Sparkles, tint: "from-brand to-brand" },
+  { to: "/pdf-editor", label: "PDF Editor", icon: FileEdit },
   { to: "/ai-design", label: "AI Design", icon: Palette },
   { to: "/scan", label: "Scan Document", icon: ScanLine },
   { to: "/image-to-pdf", label: "Image to PDF", icon: Images },
@@ -73,6 +75,20 @@ function HomePage() {
 
       <section className="mt-6">
         <h2 className="mb-3 text-sm font-bold text-muted-foreground">Quick actions</h2>
+        <Link
+          to="/pdf-editor"
+          className="surface-card animate-rise mb-3 flex items-center gap-4 p-5 transition-transform active:scale-[0.98]"
+        >
+          <span className="gradient-brand flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-primary-foreground">
+            <FileEdit className="h-7 w-7" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-base font-bold">PDF Editor</span>
+            <span className="block text-xs text-muted-foreground">
+              Edit text, sign, merge, split, compress, OCR and export — all in the app.
+            </span>
+          </span>
+        </Link>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {ACTIONS.map((a, i) => (
             <Link

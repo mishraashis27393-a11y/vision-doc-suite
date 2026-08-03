@@ -1,7 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { LogOut, Moon, ShieldCheck, Sun } from "lucide-react";
+import { BadgeDollarSign, FileEdit, LogOut, Moon, ShieldCheck, Sun } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -80,6 +81,17 @@ function ProfilePage() {
           Every document is stored in a private area only your account can open. Share links are time-limited and can be
           revoked by deleting the document.
         </p>
+      </div>
+
+      <div className="mt-4 grid grid-cols-2 gap-3">
+        <Link to="/pdf-editor" className="surface-card flex flex-col gap-1.5 p-4 active:scale-[0.98]">
+          <FileEdit className="h-5 w-5 text-brand-ink" />
+          <span className="text-sm font-semibold">PDF Editor</span>
+        </Link>
+        <Link to="/ad-settings" className="surface-card flex flex-col gap-1.5 p-4 active:scale-[0.98]">
+          <BadgeDollarSign className="h-5 w-5 text-brand-ink" />
+          <span className="text-sm font-semibold">Ads & monetization</span>
+        </Link>
       </div>
 
       <Button variant="outline" className="mt-4 w-full rounded-full text-destructive" onClick={signOut}>

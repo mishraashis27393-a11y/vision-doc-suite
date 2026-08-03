@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
-import { callGateway, generateDesignImage } from "./ai.server";
+import { callGateway, generateDesignImage, ocrImageText } from "./ai.server";
 
 const GenerateInput = z.object({
   docType: z.string().min(1),
@@ -31,6 +31,13 @@ export const generateDesign = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => DesignInput.parse(input))
   .handler(async ({ data }) => generateDesignImage(data));
+
+const OcrInput = z.object({ image: z.string().min(32).max(12_000_000) });
+
+export const ocrPage = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => OcrInput.parse(input))
+  .handler(async ({ data }) => ({ text: await ocrImageText(data.image) }));
 
 export const generateDocument = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

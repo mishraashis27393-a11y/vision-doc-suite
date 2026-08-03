@@ -12,11 +12,13 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AuthenticatedAdSettingsRouteImport } from './routes/_authenticated/ad-settings'
 import { Route as AuthenticatedAiCreateRouteImport } from './routes/_authenticated/ai-create'
 import { Route as AuthenticatedAiDesignRouteImport } from './routes/_authenticated/ai-design'
 import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/home'
 import { Route as AuthenticatedImageToPdfRouteImport } from './routes/_authenticated/image-to-pdf'
 import { Route as AuthenticatedLibraryRouteImport } from './routes/_authenticated/library'
+import { Route as AuthenticatedPdfEditorRouteImport } from './routes/_authenticated/pdf-editor'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedScanRouteImport } from './routes/_authenticated/scan'
 import { Route as AuthenticatedCreateTypeRouteImport } from './routes/_authenticated/create.$type'
@@ -36,6 +38,11 @@ const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedAdSettingsRoute = AuthenticatedAdSettingsRouteImport.update({
+  id: '/ad-settings',
+  path: '/ad-settings',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedAiCreateRoute = AuthenticatedAiCreateRouteImport.update({
   id: '/ai-create',
@@ -60,6 +67,11 @@ const AuthenticatedImageToPdfRoute = AuthenticatedImageToPdfRouteImport.update({
 const AuthenticatedLibraryRoute = AuthenticatedLibraryRouteImport.update({
   id: '/library',
   path: '/library',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedPdfEditorRoute = AuthenticatedPdfEditorRouteImport.update({
+  id: '/pdf-editor',
+  path: '/pdf-editor',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
@@ -91,11 +103,13 @@ const AuthenticatedDocIdRoute = AuthenticatedDocIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/ad-settings': typeof AuthenticatedAdSettingsRoute
   '/ai-create': typeof AuthenticatedAiCreateRoute
   '/ai-design': typeof AuthenticatedAiDesignRoute
   '/home': typeof AuthenticatedHomeRoute
   '/image-to-pdf': typeof AuthenticatedImageToPdfRoute
   '/library': typeof AuthenticatedLibraryRoute
+  '/pdf-editor': typeof AuthenticatedPdfEditorRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/scan': typeof AuthenticatedScanRoute
   '/create/$type': typeof AuthenticatedCreateTypeRoute
@@ -105,11 +119,13 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/ad-settings': typeof AuthenticatedAdSettingsRoute
   '/ai-create': typeof AuthenticatedAiCreateRoute
   '/ai-design': typeof AuthenticatedAiDesignRoute
   '/home': typeof AuthenticatedHomeRoute
   '/image-to-pdf': typeof AuthenticatedImageToPdfRoute
   '/library': typeof AuthenticatedLibraryRoute
+  '/pdf-editor': typeof AuthenticatedPdfEditorRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/scan': typeof AuthenticatedScanRoute
   '/create/$type': typeof AuthenticatedCreateTypeRoute
@@ -121,11 +137,13 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/_authenticated/ad-settings': typeof AuthenticatedAdSettingsRoute
   '/_authenticated/ai-create': typeof AuthenticatedAiCreateRoute
   '/_authenticated/ai-design': typeof AuthenticatedAiDesignRoute
   '/_authenticated/home': typeof AuthenticatedHomeRoute
   '/_authenticated/image-to-pdf': typeof AuthenticatedImageToPdfRoute
   '/_authenticated/library': typeof AuthenticatedLibraryRoute
+  '/_authenticated/pdf-editor': typeof AuthenticatedPdfEditorRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/scan': typeof AuthenticatedScanRoute
   '/_authenticated/create/$type': typeof AuthenticatedCreateTypeRoute
@@ -137,11 +155,13 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/ad-settings'
     | '/ai-create'
     | '/ai-design'
     | '/home'
     | '/image-to-pdf'
     | '/library'
+    | '/pdf-editor'
     | '/profile'
     | '/scan'
     | '/create/$type'
@@ -151,11 +171,13 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/ad-settings'
     | '/ai-create'
     | '/ai-design'
     | '/home'
     | '/image-to-pdf'
     | '/library'
+    | '/pdf-editor'
     | '/profile'
     | '/scan'
     | '/create/$type'
@@ -166,11 +188,13 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/_authenticated/ad-settings'
     | '/_authenticated/ai-create'
     | '/_authenticated/ai-design'
     | '/_authenticated/home'
     | '/_authenticated/image-to-pdf'
     | '/_authenticated/library'
+    | '/_authenticated/pdf-editor'
     | '/_authenticated/profile'
     | '/_authenticated/scan'
     | '/_authenticated/create/$type'
@@ -207,6 +231,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/ad-settings': {
+      id: '/_authenticated/ad-settings'
+      path: '/ad-settings'
+      fullPath: '/ad-settings'
+      preLoaderRoute: typeof AuthenticatedAdSettingsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/ai-create': {
       id: '/_authenticated/ai-create'
       path: '/ai-create'
@@ -240,6 +271,13 @@ declare module '@tanstack/react-router' {
       path: '/library'
       fullPath: '/library'
       preLoaderRoute: typeof AuthenticatedLibraryRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/pdf-editor': {
+      id: '/_authenticated/pdf-editor'
+      path: '/pdf-editor'
+      fullPath: '/pdf-editor'
+      preLoaderRoute: typeof AuthenticatedPdfEditorRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/profile': {
@@ -281,11 +319,13 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAdSettingsRoute: typeof AuthenticatedAdSettingsRoute
   AuthenticatedAiCreateRoute: typeof AuthenticatedAiCreateRoute
   AuthenticatedAiDesignRoute: typeof AuthenticatedAiDesignRoute
   AuthenticatedHomeRoute: typeof AuthenticatedHomeRoute
   AuthenticatedImageToPdfRoute: typeof AuthenticatedImageToPdfRoute
   AuthenticatedLibraryRoute: typeof AuthenticatedLibraryRoute
+  AuthenticatedPdfEditorRoute: typeof AuthenticatedPdfEditorRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedScanRoute: typeof AuthenticatedScanRoute
   AuthenticatedCreateTypeRoute: typeof AuthenticatedCreateTypeRoute
@@ -294,11 +334,13 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAdSettingsRoute: AuthenticatedAdSettingsRoute,
   AuthenticatedAiCreateRoute: AuthenticatedAiCreateRoute,
   AuthenticatedAiDesignRoute: AuthenticatedAiDesignRoute,
   AuthenticatedHomeRoute: AuthenticatedHomeRoute,
   AuthenticatedImageToPdfRoute: AuthenticatedImageToPdfRoute,
   AuthenticatedLibraryRoute: AuthenticatedLibraryRoute,
+  AuthenticatedPdfEditorRoute: AuthenticatedPdfEditorRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedScanRoute: AuthenticatedScanRoute,
   AuthenticatedCreateTypeRoute: AuthenticatedCreateTypeRoute,

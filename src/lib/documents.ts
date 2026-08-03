@@ -102,6 +102,24 @@ export async function updateDocument(id: string, patch: Partial<DocumentRow>) {
   if (error) throw error;
 }
 
+/** Uploads an edited PDF as the document's new file (keeps the same library entry). */
+export async function replaceDocumentFile(doc: DocumentRow, blob: Blob, pageCount: number) {
+  const userId = await currentUserId();
+  const path = `${userId}/${crypto.randomUUID()}.pdf`;
+  const { error: uploadError } = await supabase.storage
+    .from("documents")
+    .upload(path, blob, { contentType: "application/pdf", upsert: false });
+  if (uploadError) throw uploadError;
+
+  const { error } = await supabase
+    .from("documents")
+    .update({ file_path: path, file_size: blob.size, page_count: pageCount, updated_at: new Date().toISOString() })
+    .eq("id", doc.id);
+  if (error) throw error;
+  if (doc.file_path) await supabase.storage.from("documents").remove([doc.file_path]);
+  return path;
+}
+
 export async function deleteDocument(doc: DocumentRow) {
   if (doc.file_path) await supabase.storage.from("documents").remove([doc.file_path]);
   const { error } = await supabase.from("documents").delete().eq("id", doc.id);
