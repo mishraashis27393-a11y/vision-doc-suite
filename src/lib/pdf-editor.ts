@@ -162,20 +162,14 @@ export async function commitItems(bytes: Uint8Array, items: EditorItem[]): Promi
         }
       });
       if (item.link) {
+        // Visible link cue — a blue underline under the linked text block.
         const height = Math.max(lh * lines.length, item.size);
-        page.node.set(
-          // Link annotation
-          doc.context.obj("Annots") as never,
-          doc.context.obj([
-            doc.context.obj({
-              Type: "Annot",
-              Subtype: "Link",
-              Rect: [item.x, H - item.y - height, item.x + item.width, H - item.y],
-              Border: [0, 0, 0],
-              A: { Type: "Action", S: "URI", URI: item.link },
-            }),
-          ]) as never,
-        );
+        page.drawLine({
+          start: { x: item.x, y: H - item.y - height },
+          end: { x: item.x + item.width, y: H - item.y - height },
+          thickness: 0.8,
+          color: rgb(0.2, 0.35, 0.85),
+        });
       }
       continue;
     }
