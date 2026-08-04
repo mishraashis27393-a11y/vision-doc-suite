@@ -8,8 +8,8 @@
 
 const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
 /** Latest stable Gemini models. */
-const GEMINI_TEXT_MODELS = ["gemini-2.5-flash", "gemini-2.5-flash-lite"];
-const GEMINI_IMAGE_MODELS = ["gemini-2.5-flash-image"];
+const GEMINI_TEXT_MODELS = ["gemini-3.6-flash", "gemini-3.5-flash", "gemini-flash-latest"];
+const GEMINI_IMAGE_MODELS = ["gemini-3.1-flash-image", "gemini-2.5-flash-image"];
 const CHAT_MODELS = ["google/gemini-3.6-flash", "google/gemini-2.5-flash"];
 const IMAGE_MODELS = ["google/gemini-3.1-flash-image", "google/gemini-2.5-flash-image"];
 
