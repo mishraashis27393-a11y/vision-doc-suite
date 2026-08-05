@@ -439,6 +439,7 @@ export async function extractPdfText(bytes: Uint8Array): Promise<string[]> {
 
 /** Word-compatible export (HTML .doc, opens in Word / Google Docs). */
 export function textToWordBlob(title: string, pages: string[]) {
+  void 0;
   const body = pages
     .map((p, i) => `<h3>Page ${i + 1}</h3><p>${p.replace(/&/g, "&amp;").replace(/</g, "&lt;") || "&nbsp;"}</p>`)
     .join("<br style='page-break-before:always'/>");
