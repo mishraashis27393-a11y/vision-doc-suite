@@ -986,6 +986,56 @@ function PdfEditorPage() {
         />
       )}
 
+      {activeBlock && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-foreground/40 p-4 backdrop-blur-sm sm:items-center">
+          <div className="surface-card w-full max-w-md space-y-3 p-4">
+            <p className="text-sm font-bold">Edit this line</p>
+            <Textarea value={blockText} onChange={(e) => setBlockText(e.target.value)} rows={3} autoFocus />
+            <div className="grid grid-cols-3 gap-2">
+              <div className="space-y-1">
+                <Label className="text-[11px]">Size</Label>
+                <Input type="number" min={5} max={72} value={blockSize} onChange={(e) => setBlockSize(Number(e.target.value) || 12)} />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-[11px]">Colour</Label>
+                <input
+                  type="color"
+                  value={color}
+                  onChange={(e) => setColor(e.target.value)}
+                  className="h-10 w-full rounded-lg border border-border bg-background"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-[11px]">Page bg</Label>
+                <input
+                  type="color"
+                  value={blockBg}
+                  onChange={(e) => setBlockBg(e.target.value)}
+                  className="h-10 w-full rounded-lg border border-border bg-background"
+                />
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Toggle active={bold} onClick={() => setBold((v) => !v)} label="Bold" />
+              <Toggle active={italic} onClick={() => setItalic((v) => !v)} label="Italic" />
+              <Toggle active={underline} onClick={() => setUnderline((v) => !v)} label="Underline" />
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              <Button variant="outline" onClick={() => setActiveBlock(null)}>
+                Cancel
+              </Button>
+              <Button variant="outline" onClick={() => void commitBlock("")}>
+                <Trash2 className="mr-1 h-4 w-4" /> Delete
+              </Button>
+              <Button onClick={() => void commitBlock(blockText)}>Apply</Button>
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              Tip: match “Page bg” to the paper colour so the replaced line blends in perfectly.
+            </p>
+          </div>
+        </div>
+      )}
+
       <input
         ref={imageInput}
         type="file"
