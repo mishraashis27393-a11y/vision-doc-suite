@@ -60,6 +60,18 @@ export type EditorItem = TextItem | ShapeItem | ImageItem | DrawItem;
 
 export type PageInfo = { width: number; height: number; rotation: number };
 
+/** A line of real text found inside an uploaded PDF (coords are top-left origin). */
+export type TextBlock = {
+  id: string;
+  page: number;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  size: number;
+  text: string;
+};
+
 /* ---------------------------------------------------------------- helpers */
 
 export function uid() {
@@ -447,4 +459,131 @@ export function downloadBlob(blob: Blob, filename: string) {
 
 export function bytesToBlob(bytes: Uint8Array) {
   return new Blob([bytes as unknown as BlobPart], { type: "application/pdf" });
+}
+
+/* ------------------------------------------------- editing existing content */
+
+/** Reads the real text of a page as editable line blocks (top-left origin). */
+export async function extractTextBlocks(bytes: Uint8Array, index: number): Promise<TextBlock[]> {
+  const pdfjs = await import("pdfjs-dist");
+  const worker = await import("pdfjs-dist/build/pdf.worker.min.mjs?url");
+  pdfjs.GlobalWorkerOptions.workerSrc = (worker as { default: string }).default;
+  const pdf = await pdfjs.getDocument({ data: new Uint8Array(bytes) }).promise;
+  const page = await pdf.getPage(index + 1);
+  const height = page.getViewport({ scale: 1 }).height;
+  const content = await page.getTextContent();
+
+  type Raw = { x: number; baseline: number; w: number; size: number; text: string };
+  const raws: Raw[] = [];
+  for (const it of content.items) {
+    if (!("str" in it)) continue;
+    const item = it as { str: string; width: number; height: number; transform: number[] };
+    if (!item.str.trim()) continue;
+    const [a, b, , d, e, f] = item.transform;
+    const size = Math.max(6, Math.abs(d) || Math.hypot(b, d) || Math.hypot(a, b) || item.height || 11);
+    raws.push({ x: e, baseline: f, w: item.width || size * item.str.length * 0.5, size, text: item.str });
+  }
+  await pdf.cleanup();
+
+  // Group spans that share a baseline into one editable line.
+  const lines = new Map<string, Raw[]>();
+  for (const r of raws) {
+    const key = Math.round(r.baseline / 2).toString();
+    const bucket = lines.get(key);
+    if (bucket) bucket.push(r);
+    else lines.set(key, [r]);
+  }
+
+  const blocks: TextBlock[] = [];
+  for (const bucket of lines.values()) {
+    bucket.sort((p, q) => p.x - q.x);
+    const size = Math.max(...bucket.map((r) => r.size));
+    const left = bucket[0].x;
+    const right = Math.max(...bucket.map((r) => r.x + r.w));
+    const baseline = bucket[0].baseline;
+    let text = "";
+    let cursor = left;
+    for (const r of bucket) {
+      if (text && r.x - cursor > size * 0.22 && !text.endsWith(" ") && !r.text.startsWith(" ")) text += " ";
+      text += r.text;
+      cursor = r.x + r.w;
+    }
+    if (!text.trim()) continue;
+    blocks.push({
+      id: uid(),
+      page: index,
+      x: left,
+      y: height - baseline - size * 0.8,
+      w: Math.max(right - left, size * 0.6),
+      h: size * 1.25,
+      size,
+      text: text.replace(/\s+/g, " ").trim(),
+    });
+  }
+
+  return blocks.sort((p, q) => p.y - q.y || p.x - q.x);
+}
+
+export type BlockEdit = {
+  text: string;
+  size: number;
+  color: string;
+  font: EditorFont;
+  bold: boolean;
+  italic: boolean;
+  underline: boolean;
+  align: "left" | "center" | "right";
+  background: string;
+};
+
+/** Paints over an existing text line and re-draws it with the edited content. */
+export async function replaceTextBlock(bytes: Uint8Array, block: TextBlock, edit: BlockEdit): Promise<Uint8Array> {
+  const pad = Math.max(1.5, block.size * 0.22);
+  const cover: ShapeItem = {
+    kind: "rect",
+    id: uid(),
+    page: block.page,
+    x: block.x - pad,
+    y: block.y - pad,
+    w: block.w + pad * 2,
+    h: block.h + pad * 2,
+    color: edit.background,
+    fill: true,
+    thickness: 0,
+    opacity: 1,
+  };
+
+  const items: EditorItem[] = [cover];
+  if (edit.text.trim()) {
+    items.push({
+      kind: "text",
+      id: uid(),
+      page: block.page,
+      x: block.x,
+      y: block.y,
+      text: edit.text,
+      size: edit.size,
+      color: edit.color,
+      font: edit.font,
+      bold: edit.bold,
+      italic: edit.italic,
+      underline: edit.underline,
+      align: edit.align,
+      lineSpacing: 1.2,
+      width: Math.max(block.w, edit.size * 4),
+    });
+  }
+  return commitItems(bytes, items);
+}
+
+/** Paints a solid block over any region — used to delete text or images in place. */
+export async function eraseRegion(
+  bytes: Uint8Array,
+  page: number,
+  rect: { x: number; y: number; w: number; h: number },
+  colorHex = "#ffffff",
+) {
+  return commitItems(bytes, [
+    { kind: "rect", id: uid(), page, ...rect, color: colorHex, fill: true, thickness: 0, opacity: 1 },
+  ]);
 }

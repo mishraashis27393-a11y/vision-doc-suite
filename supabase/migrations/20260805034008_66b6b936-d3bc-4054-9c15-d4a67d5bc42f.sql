@@ -1,0 +1,1 @@
+DELETE FROM public.documents WHERE title = 'test' AND doc_type = 'pdf-editor';

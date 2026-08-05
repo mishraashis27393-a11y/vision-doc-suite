@@ -52,6 +52,9 @@ import {
   deletePage,
   downloadBlob,
   duplicatePage,
+  eraseRegion,
+  extractTextBlocks,
+  replaceTextBlock,
   extractPages,
   extractPdfText,
   insertBlankPage,
@@ -66,6 +69,7 @@ import {
   type EditorFont,
   type EditorItem,
   type PageInfo,
+  type TextBlock,
 } from "@/lib/pdf-editor";
 
 type Search = { doc?: string };
@@ -90,16 +94,18 @@ export const Route = createFileRoute("/_authenticated/pdf-editor")({
   component: PdfEditorPage,
 });
 
-type Tool = "select" | "text" | "highlight" | "rect" | "ellipse" | "line" | "draw" | "image" | "signature";
+type Tool = "select" | "edit" | "erase" | "text" | "highlight" | "rect" | "ellipse" | "line" | "draw" | "image" | "signature";
 
 const TOOLS: { id: Tool; label: string; icon: typeof Type }[] = [
   { id: "select", label: "View", icon: Search },
+  { id: "edit", label: "Edit text", icon: PenLine },
   { id: "text", label: "Text", icon: Type },
+  { id: "erase", label: "Erase", icon: Eraser },
   { id: "highlight", label: "Highlight", icon: Highlighter },
   { id: "draw", label: "Draw", icon: PenLine },
   { id: "rect", label: "Box", icon: Shapes },
   { id: "ellipse", label: "Circle", icon: Shapes },
-  { id: "line", label: "Line", icon: Eraser },
+  { id: "line", label: "Line", icon: Shapes },
   { id: "image", label: "Image", icon: ImagePlus },
   { id: "signature", label: "Sign", icon: PenLine },
 ];
@@ -137,6 +143,11 @@ function PdfEditorPage() {
   const [ocrText, setOcrText] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [searchHits, setSearchHits] = useState<number[] | null>(null);
+  const [blocks, setBlocks] = useState<TextBlock[]>([]);
+  const [activeBlock, setActiveBlock] = useState<TextBlock | null>(null);
+  const [blockText, setBlockText] = useState("");
+  const [blockSize, setBlockSize] = useState(12);
+  const [blockBg, setBlockBg] = useState("#ffffff");
 
   const canvasRef = useRef<HTMLDivElement | null>(null);
   const openInput = useRef<HTMLInputElement | null>(null);
@@ -240,8 +251,54 @@ function PdfEditorPage() {
       push(await commitItems(bytes, [item]));
     });
 
+  /* Load the real text lines of the current page when the Edit-text tool is on. */
+  useEffect(() => {
+    if (tool !== "edit" || !bytes) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const found = await extractTextBlocks(bytes, page);
+        if (!cancelled) {
+          setBlocks(found);
+          if (!found.length) toast.info("No selectable text here — run OCR in the Text tab for scanned pages.");
+        }
+      } catch {
+        if (!cancelled) setBlocks([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [tool, bytes, page]);
+
+  const openBlock = (b: TextBlock) => {
+    setActiveBlock(b);
+    setBlockText(b.text);
+    setBlockSize(Math.round(b.size));
+  };
+
+  const commitBlock = (nextText: string) =>
+    run("Updating text…", async () => {
+      if (!bytes || !activeBlock) return;
+      const out = await replaceTextBlock(bytes, activeBlock, {
+        text: nextText,
+        size: blockSize,
+        color,
+        font,
+        bold,
+        italic,
+        underline,
+        align,
+        background: blockBg,
+      });
+      push(out);
+      setActiveBlock(null);
+      setBlocks([]);
+      toast.success(nextText.trim() ? "Text updated" : "Text removed");
+    });
+
   const onPointerDown = (e: React.PointerEvent) => {
-    if (!bytes || tool === "select") return;
+    if (!bytes || tool === "select" || tool === "edit") return;
     const p = toPagePoint(e.clientX, e.clientY);
 
     if (tool === "text") {
@@ -311,6 +368,16 @@ function PdfEditorPage() {
     }
     const x = Math.min(d.start.x, last.x);
     const y = Math.min(d.start.y, last.y);
+    if (tool === "erase") {
+      const w = Math.abs(last.x - d.start.x);
+      const h = Math.abs(last.y - d.start.y);
+      if (w < 3 || h < 3) return;
+      void run("Erasing…", async () => {
+        push(await eraseRegion(bytes, page, { x, y, w, h }, blockBg));
+        toast.success("Area cleared — place an image or text over it if you like.");
+      });
+      return;
+    }
     const w = tool === "line" ? last.x - d.start.x : Math.abs(last.x - d.start.x);
     const h = tool === "line" ? last.y - d.start.y : Math.abs(last.y - d.start.y);
     if (Math.abs(w) < 3 && Math.abs(h) < 3) return;
@@ -577,8 +644,34 @@ function PdfEditorPage() {
             </div>
           )}
           {ghostBox && <div className="pointer-events-none absolute border-2 border-brand/70 bg-brand/10" style={ghostBox} />}
+          {tool === "edit" &&
+            blocks.map((b) => (
+              <button
+                key={b.id}
+                onClick={() => openBlock(b)}
+                title={b.text}
+                className="absolute rounded-[3px] border border-brand/60 bg-brand/10 transition-colors hover:bg-brand/25"
+                style={{
+                  left: `${(b.x / pageSize.width) * 100}%`,
+                  top: `${(b.y / pageSize.height) * 100}%`,
+                  width: `${(b.w / pageSize.width) * 100}%`,
+                  height: `${(b.h / pageSize.height) * 100}%`,
+                }}
+              />
+            ))}
         </div>
       </div>
+
+      {tool === "edit" && (
+        <p className="mt-2 text-center text-[11px] text-muted-foreground">
+          {blocks.length ? "Tap any highlighted line to edit or delete it." : "Scanning this page for editable text…"}
+        </p>
+      )}
+      {tool === "erase" && (
+        <p className="mt-2 text-center text-[11px] text-muted-foreground">
+          Drag over any text or image to clear it, then add your own content on top.
+        </p>
+      )}
 
       <div className="mt-2 flex items-center justify-between">
         <Button size="sm" variant="outline" disabled={page === 0} onClick={() => setPage((p) => p - 1)}>
@@ -891,6 +984,56 @@ function PdfEditorPage() {
             toast.info("Tap the page to drop your signature.");
           }}
         />
+      )}
+
+      {activeBlock && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-foreground/40 p-4 backdrop-blur-sm sm:items-center">
+          <div className="surface-card w-full max-w-md space-y-3 p-4">
+            <p className="text-sm font-bold">Edit this line</p>
+            <Textarea value={blockText} onChange={(e) => setBlockText(e.target.value)} rows={3} autoFocus />
+            <div className="grid grid-cols-3 gap-2">
+              <div className="space-y-1">
+                <Label className="text-[11px]">Size</Label>
+                <Input type="number" min={5} max={72} value={blockSize} onChange={(e) => setBlockSize(Number(e.target.value) || 12)} />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-[11px]">Colour</Label>
+                <input
+                  type="color"
+                  value={color}
+                  onChange={(e) => setColor(e.target.value)}
+                  className="h-10 w-full rounded-lg border border-border bg-background"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-[11px]">Page bg</Label>
+                <input
+                  type="color"
+                  value={blockBg}
+                  onChange={(e) => setBlockBg(e.target.value)}
+                  className="h-10 w-full rounded-lg border border-border bg-background"
+                />
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Toggle active={bold} onClick={() => setBold((v) => !v)} label="Bold" />
+              <Toggle active={italic} onClick={() => setItalic((v) => !v)} label="Italic" />
+              <Toggle active={underline} onClick={() => setUnderline((v) => !v)} label="Underline" />
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              <Button variant="outline" onClick={() => setActiveBlock(null)}>
+                Cancel
+              </Button>
+              <Button variant="outline" onClick={() => void commitBlock("")}>
+                <Trash2 className="mr-1 h-4 w-4" /> Delete
+              </Button>
+              <Button onClick={() => void commitBlock(blockText)}>Apply</Button>
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              Tip: match “Page bg” to the paper colour so the replaced line blends in perfectly.
+            </p>
+          </div>
+        </div>
       )}
 
       <input
