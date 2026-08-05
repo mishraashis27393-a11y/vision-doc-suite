@@ -143,6 +143,11 @@ function PdfEditorPage() {
   const [ocrText, setOcrText] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [searchHits, setSearchHits] = useState<number[] | null>(null);
+  const [blocks, setBlocks] = useState<TextBlock[]>([]);
+  const [activeBlock, setActiveBlock] = useState<TextBlock | null>(null);
+  const [blockText, setBlockText] = useState("");
+  const [blockSize, setBlockSize] = useState(12);
+  const [blockBg, setBlockBg] = useState("#ffffff");
 
   const canvasRef = useRef<HTMLDivElement | null>(null);
   const openInput = useRef<HTMLInputElement | null>(null);
@@ -246,8 +251,54 @@ function PdfEditorPage() {
       push(await commitItems(bytes, [item]));
     });
 
+  /* Load the real text lines of the current page when the Edit-text tool is on. */
+  useEffect(() => {
+    if (tool !== "edit" || !bytes) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const found = await extractTextBlocks(bytes, page);
+        if (!cancelled) {
+          setBlocks(found);
+          if (!found.length) toast.info("No selectable text here — run OCR in the Text tab for scanned pages.");
+        }
+      } catch {
+        if (!cancelled) setBlocks([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [tool, bytes, page]);
+
+  const openBlock = (b: TextBlock) => {
+    setActiveBlock(b);
+    setBlockText(b.text);
+    setBlockSize(Math.round(b.size));
+  };
+
+  const commitBlock = (nextText: string) =>
+    run("Updating text…", async () => {
+      if (!bytes || !activeBlock) return;
+      const out = await replaceTextBlock(bytes, activeBlock, {
+        text: nextText,
+        size: blockSize,
+        color,
+        font,
+        bold,
+        italic,
+        underline,
+        align,
+        background: blockBg,
+      });
+      push(out);
+      setActiveBlock(null);
+      setBlocks([]);
+      toast.success(nextText.trim() ? "Text updated" : "Text removed");
+    });
+
   const onPointerDown = (e: React.PointerEvent) => {
-    if (!bytes || tool === "select") return;
+    if (!bytes || tool === "select" || tool === "edit") return;
     const p = toPagePoint(e.clientX, e.clientY);
 
     if (tool === "text") {
@@ -317,6 +368,16 @@ function PdfEditorPage() {
     }
     const x = Math.min(d.start.x, last.x);
     const y = Math.min(d.start.y, last.y);
+    if (tool === "erase") {
+      const w = Math.abs(last.x - d.start.x);
+      const h = Math.abs(last.y - d.start.y);
+      if (w < 3 || h < 3) return;
+      void run("Erasing…", async () => {
+        push(await eraseRegion(bytes, page, { x, y, w, h }, blockBg));
+        toast.success("Area cleared — place an image or text over it if you like.");
+      });
+      return;
+    }
     const w = tool === "line" ? last.x - d.start.x : Math.abs(last.x - d.start.x);
     const h = tool === "line" ? last.y - d.start.y : Math.abs(last.y - d.start.y);
     if (Math.abs(w) < 3 && Math.abs(h) < 3) return;
