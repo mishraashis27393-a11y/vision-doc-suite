@@ -52,6 +52,9 @@ import {
   deletePage,
   downloadBlob,
   duplicatePage,
+  eraseRegion,
+  extractTextBlocks,
+  replaceTextBlock,
   extractPages,
   extractPdfText,
   insertBlankPage,
@@ -66,6 +69,7 @@ import {
   type EditorFont,
   type EditorItem,
   type PageInfo,
+  type TextBlock,
 } from "@/lib/pdf-editor";
 
 type Search = { doc?: string };
@@ -90,16 +94,18 @@ export const Route = createFileRoute("/_authenticated/pdf-editor")({
   component: PdfEditorPage,
 });
 
-type Tool = "select" | "text" | "highlight" | "rect" | "ellipse" | "line" | "draw" | "image" | "signature";
+type Tool = "select" | "edit" | "erase" | "text" | "highlight" | "rect" | "ellipse" | "line" | "draw" | "image" | "signature";
 
 const TOOLS: { id: Tool; label: string; icon: typeof Type }[] = [
   { id: "select", label: "View", icon: Search },
+  { id: "edit", label: "Edit text", icon: PenLine },
   { id: "text", label: "Text", icon: Type },
+  { id: "erase", label: "Erase", icon: Eraser },
   { id: "highlight", label: "Highlight", icon: Highlighter },
   { id: "draw", label: "Draw", icon: PenLine },
   { id: "rect", label: "Box", icon: Shapes },
   { id: "ellipse", label: "Circle", icon: Shapes },
-  { id: "line", label: "Line", icon: Eraser },
+  { id: "line", label: "Line", icon: Shapes },
   { id: "image", label: "Image", icon: ImagePlus },
   { id: "signature", label: "Sign", icon: PenLine },
 ];
