@@ -644,8 +644,34 @@ function PdfEditorPage() {
             </div>
           )}
           {ghostBox && <div className="pointer-events-none absolute border-2 border-brand/70 bg-brand/10" style={ghostBox} />}
+          {tool === "edit" &&
+            blocks.map((b) => (
+              <button
+                key={b.id}
+                onClick={() => openBlock(b)}
+                title={b.text}
+                className="absolute rounded-[3px] border border-brand/60 bg-brand/10 transition-colors hover:bg-brand/25"
+                style={{
+                  left: `${(b.x / pageSize.width) * 100}%`,
+                  top: `${(b.y / pageSize.height) * 100}%`,
+                  width: `${(b.w / pageSize.width) * 100}%`,
+                  height: `${(b.h / pageSize.height) * 100}%`,
+                }}
+              />
+            ))}
         </div>
       </div>
+
+      {tool === "edit" && (
+        <p className="mt-2 text-center text-[11px] text-muted-foreground">
+          {blocks.length ? "Tap any highlighted line to edit or delete it." : "Scanning this page for editable text…"}
+        </p>
+      )}
+      {tool === "erase" && (
+        <p className="mt-2 text-center text-[11px] text-muted-foreground">
+          Drag over any text or image to clear it, then add your own content on top.
+        </p>
+      )}
 
       <div className="mt-2 flex items-center justify-between">
         <Button size="sm" variant="outline" disabled={page === 0} onClick={() => setPage((p) => p - 1)}>
