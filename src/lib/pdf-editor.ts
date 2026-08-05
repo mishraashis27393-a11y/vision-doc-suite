@@ -60,6 +60,18 @@ export type EditorItem = TextItem | ShapeItem | ImageItem | DrawItem;
 
 export type PageInfo = { width: number; height: number; rotation: number };
 
+/** A line of real text found inside an uploaded PDF (coords are top-left origin). */
+export type TextBlock = {
+  id: string;
+  page: number;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  size: number;
+  text: string;
+};
+
 /* ---------------------------------------------------------------- helpers */
 
 export function uid() {
