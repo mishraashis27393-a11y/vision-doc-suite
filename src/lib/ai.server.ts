@@ -100,7 +100,7 @@ async function withRetry<T>(fn: () => Promise<T>): Promise<T> {
       const retryable =
         error instanceof ProviderError ? error.retryable : true; // network/abort errors are retryable
       if (!retryable || attempt === MAX_ATTEMPTS) break;
-      await sleep(400 * 2 ** (attempt - 1));
+      await sleep((error instanceof ProviderError && error.status === 429 ? 1500 : 400) * 2 ** (attempt - 1));
     }
   }
   throw lastError;
@@ -132,6 +132,13 @@ function geminiError(status: number, body: string) {
 function isKeyError(error: unknown) {
   return error instanceof ProviderError && (error.status === 401 || error.status === 403 || error.status === 400);
 }
+
+function isRateLimit(error: unknown) {
+  return error instanceof ProviderError && error.status === 429;
+}
+
+const RATE_LIMIT_MESSAGE =
+  "Gemini is over its quota right now (rate limited). Wait a minute and try again, or check the quota on your Gemini API key.";
 
 /* ----------------------------------------------------------- gemini: text */
 
@@ -177,6 +184,7 @@ async function callGemini(system: string, user: string) {
       if (isKeyError(error)) throw error; // a bad key won't get better on another model
     }
   }
+  if (isRateLimit(lastError)) throw new ProviderError(RATE_LIMIT_MESSAGE, 429, true);
   if (lastError instanceof Error) throw lastError;
   throw new ProviderError("Gemini returned no usable response.", 502, false);
 }
@@ -219,6 +227,7 @@ export async function ocrImageText(dataUrl: string) {
       if (isKeyError(error)) throw error;
     }
   }
+  if (isRateLimit(lastError)) throw new ProviderError(RATE_LIMIT_MESSAGE, 429, true);
   if (lastError instanceof Error) throw lastError;
   throw new ProviderError("Gemini could not read text from this page.", 502, false);
 }
@@ -260,6 +269,7 @@ export async function generateDesignImage(data: {
       if (isKeyError(error)) throw error;
     }
   }
+  if (isRateLimit(lastError)) throw new ProviderError(RATE_LIMIT_MESSAGE, 429, true);
   if (lastError instanceof Error) throw lastError;
   throw new ProviderError("Gemini did not return a design. Try adjusting your prompt.", 502, false);
 }
