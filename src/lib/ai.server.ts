@@ -262,21 +262,54 @@ export async function generateDesignImage(data: {
     .filter(Boolean)
     .join("\n");
 
-  if (!process.env.GEMINI_API_KEY)
-    throw new ProviderError("Gemini design generation is not configured. Add GEMINI_API_KEY to the server environment.", 503, false);
   let lastError: unknown;
-  for (const model of GEMINI_IMAGE_MODELS) {
-    try {
-      const parts = await withRetry(() =>
-        geminiGenerate(model, { contents: [{ role: "user", parts: [{ text: prompt }] }] }),
-      );
-      const inline = parts.find((p) => p.inlineData?.data)?.inlineData;
-      if (inline?.data) return { image: `data:${inline.mimeType ?? "image/png"};base64,${inline.data}` };
-    } catch (error) {
-      lastError = error;
-      if (isKeyError(error)) throw error;
+  if (process.env.GEMINI_API_KEY) {
+    for (const model of GEMINI_IMAGE_MODELS) {
+      try {
+        const parts = await withRetry(() =>
+          geminiGenerate(model, { contents: [{ role: "user", parts: [{ text: prompt }] }] }),
+        );
+        const inline = parts.find((p) => p.inlineData?.data)?.inlineData;
+        if (inline?.data) return { image: `data:${inline.mimeType ?? "image/png"};base64,${inline.data}` };
+      } catch (error) {
+        lastError = error;
+        if (isKeyError(error)) break;
+      }
     }
   }
+
+  // Free, key-less fallback so designs keep working when Gemini image quota is 0.
+  try {
+    return { image: await generateFreeImage(prompt, data.aspect) };
+  } catch (error) {
+    lastError = lastError ?? error;
+  }
+
   if (lastError instanceof Error) throw lastError;
-  throw new ProviderError("Gemini did not return a design. Try adjusting your prompt.", 502, false);
+  throw new ProviderError("Design generation failed. Try adjusting your prompt.", 502, false);
+}
+
+/** Pollinations.ai — free image generation, no API key required. */
+async function generateFreeImage(prompt: string, aspect: "portrait" | "landscape" | "square") {
+  const [width, height] =
+    aspect === "landscape" ? [1280, 720] : aspect === "square" ? [1024, 1024] : [864, 1080];
+  const url =
+    `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}` +
+    `?width=${width}&height=${height}&nologo=true&model=flux&seed=${Math.floor(Math.random() * 1e6)}`;
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 90_000);
+  try {
+    const res = await fetch(url, { signal: controller.signal });
+    if (!res.ok) throw new ProviderError(`Free image provider failed (${res.status}).`, 502, false);
+    const bytes = new Uint8Array(await res.arrayBuffer());
+    if (bytes.byteLength < 1000) throw new ProviderError("Free image provider returned no image.", 502, false);
+    let binary = "";
+    for (let i = 0; i < bytes.length; i += 8192)
+      binary += String.fromCharCode(...bytes.subarray(i, i + 8192));
+    const mime = res.headers.get("content-type")?.split(";")[0] || "image/jpeg";
+    return `data:${mime};base64,${btoa(binary)}`;
+  } finally {
+    clearTimeout(timer);
+  }
 }
