@@ -111,8 +111,16 @@ function geminiError(status: number, body: string) {
     return new ProviderError("The Gemini API key is invalid. Please update GEMINI_API_KEY.", status, false);
   if (status === 401 || status === 403)
     return new ProviderError("The Gemini API key was rejected. Please check its permissions.", status, false);
-  if (status === 429)
+  if (status === 429) {
+    // "limit: 0" means the free tier grants this model no quota at all — retrying never helps.
+    if (/limit:\s*0\b/.test(body))
+      return new ProviderError(
+        "This Gemini model isn't available on your API key's free tier (quota limit 0). Enable billing on your Google AI Studio project to use it.",
+        status,
+        false,
+      );
     return new ProviderError("Gemini is rate limited right now. Please try again in a moment.", status, true);
+  }
   if (status >= 500)
     return new ProviderError("Gemini is temporarily unavailable. Retrying…", status, true);
   let detail = "";
@@ -138,7 +146,7 @@ function isRateLimit(error: unknown) {
 }
 
 const RATE_LIMIT_MESSAGE =
-  "Gemini is over its quota right now (rate limited). Wait a minute and try again, or check the quota on your Gemini API key.";
+  "Gemini is over its quota right now. Wait a minute and try again, or check the quota/billing on your Gemini API key.";
 
 /* ----------------------------------------------------------- gemini: text */
 
@@ -269,7 +277,6 @@ export async function generateDesignImage(data: {
       if (isKeyError(error)) throw error;
     }
   }
-  if (isRateLimit(lastError)) throw new ProviderError(RATE_LIMIT_MESSAGE, 429, true);
   if (lastError instanceof Error) throw lastError;
   throw new ProviderError("Gemini did not return a design. Try adjusting your prompt.", 502, false);
 }
