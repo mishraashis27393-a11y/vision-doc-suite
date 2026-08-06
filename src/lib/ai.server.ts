@@ -133,6 +133,13 @@ function isKeyError(error: unknown) {
   return error instanceof ProviderError && (error.status === 401 || error.status === 403 || error.status === 400);
 }
 
+function isRateLimit(error: unknown) {
+  return error instanceof ProviderError && error.status === 429;
+}
+
+const RATE_LIMIT_MESSAGE =
+  "Gemini is over its quota right now (rate limited). Wait a minute and try again, or check the quota on your Gemini API key.";
+
 /* ----------------------------------------------------------- gemini: text */
 
 type GeminiPart = { text?: string; inline_data?: { mime_type: string; data: string } };
