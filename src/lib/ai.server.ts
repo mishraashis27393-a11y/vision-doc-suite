@@ -1,17 +1,14 @@
 /**
- * AI layer — Google Gemini is the primary provider.
+ * AI layer — Google Gemini is the only provider.
  *
  * GEMINI_API_KEY is read from the server environment only; it is never sent to
- * the browser. When the key is absent (or Gemini is unreachable) we degrade to
- * the built-in Lovable AI gateway so the app keeps working.
+ * the browser. Every AI feature calls Gemini directly from the server.
  */
 
 const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
 /** Latest stable Gemini models. */
 const GEMINI_TEXT_MODELS = ["gemini-3.6-flash", "gemini-3.5-flash", "gemini-flash-latest"];
 const GEMINI_IMAGE_MODELS = ["gemini-3.1-flash-image", "gemini-2.5-flash-image"];
-const CHAT_MODELS = ["google/gemini-3.6-flash", "google/gemini-2.5-flash"];
-const IMAGE_MODELS = ["google/gemini-3.1-flash-image", "google/gemini-2.5-flash-image"];
 
 const REQUEST_TIMEOUT_MS = 60_000;
 const MAX_ATTEMPTS = 3;
@@ -118,7 +115,18 @@ function geminiError(status: number, body: string) {
     return new ProviderError("Gemini is rate limited right now. Please try again in a moment.", status, true);
   if (status >= 500)
     return new ProviderError("Gemini is temporarily unavailable. Retrying…", status, true);
-  return new ProviderError(`Gemini request failed (${status}).`, status, false);
+  let detail = "";
+  try {
+    const parsed = JSON.parse(body) as { error?: { message?: string } };
+    detail = parsed.error?.message?.trim() ?? "";
+  } catch {
+    detail = body.trim().slice(0, 300);
+  }
+  return new ProviderError(
+    detail ? `Gemini request failed (${status}): ${detail}` : `Gemini request failed (${status}).`,
+    status,
+    false,
+  );
 }
 
 function isKeyError(error: unknown) {
@@ -133,7 +141,8 @@ async function geminiGenerate(
   model: string,
   body: Record<string, unknown>,
 ): Promise<Array<{ text?: string; inlineData?: { mimeType?: string; data?: string } }>> {
-  const key = process.env.GEMINI_API_KEY!;
+  const key = process.env.GEMINI_API_KEY;
+  if (!key) throw new ProviderError("Gemini is not configured. Add GEMINI_API_KEY to the server environment.", 503, false);
   const res = await fetchWithTimeout(`${GEMINI_BASE}/${model}:generateContent`, {
     method: "POST",
     headers: { "Content-Type": "application/json", "x-goog-api-key": key },
@@ -146,9 +155,10 @@ async function geminiGenerate(
   return json.candidates?.[0]?.content?.parts ?? [];
 }
 
-/** Structured JSON generation through Gemini. Returns null when unavailable. */
+/** Structured JSON generation through Gemini. */
 async function callGemini(system: string, user: string) {
-  if (!process.env.GEMINI_API_KEY) return null;
+  if (!process.env.GEMINI_API_KEY)
+    throw new ProviderError("Gemini is not configured. Add GEMINI_API_KEY to the server environment.", 503, false);
 
   let lastError: unknown;
   for (const model of GEMINI_TEXT_MODELS) {
@@ -167,8 +177,8 @@ async function callGemini(system: string, user: string) {
       if (isKeyError(error)) throw error; // a bad key won't get better on another model
     }
   }
-  if (lastError instanceof ProviderError && lastError.status === 429) throw lastError;
-  return null; // fall back to the built-in models
+  if (lastError instanceof Error) throw lastError;
+  throw new ProviderError("Gemini returned no usable response.", 502, false);
 }
 
 /* ------------------------------------------------------------ public: text */
@@ -178,48 +188,9 @@ export async function callGateway(system: string, user: string) {
   const cached = cacheGet<Record<string, unknown>>(key);
   if (cached) return cached;
 
-  const viaGemini = await callGemini(system, user);
-  if (viaGemini) {
-    cacheSet(key, viaGemini);
-    return viaGemini;
-  }
-
-  const lovableKey = process.env.LOVABLE_API_KEY;
-  if (!lovableKey) throw new Error("AI is not configured yet. Add a GEMINI_API_KEY to enable AI features.");
-
-  let lastError = "AI request failed.";
-  for (const model of CHAT_MODELS) {
-    const res = await fetchWithTimeout("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "Lovable-API-Key": lovableKey },
-      body: JSON.stringify({
-        model,
-        response_format: { type: "json_object" },
-        messages: [
-          { role: "system", content: system },
-          { role: "user", content: user },
-        ],
-      }),
-    });
-
-    if (res.status === 429) throw new Error("Too many requests right now. Please try again in a moment.");
-    if (res.status === 402) throw new Error("AI credits are exhausted. Please add credits to continue.");
-    if (!res.ok) {
-      lastError = `AI request failed (${res.status}).`;
-      continue; // try the next model
-    }
-
-    const json = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
-    const raw = json.choices?.[0]?.message?.content ?? "";
-    if (!raw.trim()) {
-      lastError = "The AI returned an empty response.";
-      continue;
-    }
-    const parsed = parseJson(raw);
-    cacheSet(key, parsed);
-    return parsed;
-  }
-  throw new Error(`${lastError} Please try again.`);
+  const result = await callGemini(system, user);
+  cacheSet(key, result);
+  return result;
 }
 
 /* ------------------------------------------------------------- public: OCR */
@@ -231,54 +202,25 @@ export async function ocrImageText(dataUrl: string) {
   const instruction =
     "Extract every readable line of text from this scanned page. Preserve reading order and line breaks. Reply with plain text only, no commentary.";
 
-  if (process.env.GEMINI_API_KEY) {
-    for (const model of GEMINI_TEXT_MODELS) {
-      try {
-        const parts = await withRetry(() =>
-          geminiGenerate(model, {
-            contents: [
-              {
-                role: "user",
-                parts: [{ text: instruction }, { inline_data: { mime_type: mime, data: base64 } }] as GeminiPart[],
-              },
-            ],
-          }),
-        );
-        const text = parts.map((p) => p.text ?? "").join("");
-        if (text.trim()) return text.trim();
-      } catch (error) {
-        if (isKeyError(error)) throw error;
-      }
+  if (!process.env.GEMINI_API_KEY)
+    throw new ProviderError("Gemini OCR is not configured. Add GEMINI_API_KEY to the server environment.", 503, false);
+  let lastError: unknown;
+  for (const model of GEMINI_TEXT_MODELS) {
+    try {
+      const parts = await withRetry(() =>
+        geminiGenerate(model, {
+          contents: [{ role: "user", parts: [{ text: instruction }, { inline_data: { mime_type: mime, data: base64 } }] as GeminiPart[] }],
+        }),
+      );
+      const text = parts.map((p) => p.text ?? "").join("");
+      if (text.trim()) return text.trim();
+    } catch (error) {
+      lastError = error;
+      if (isKeyError(error)) throw error;
     }
   }
-
-  const key = process.env.LOVABLE_API_KEY;
-  if (!key) throw new Error("OCR is not configured yet.");
-  for (const model of CHAT_MODELS) {
-    const res = await fetchWithTimeout("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "Lovable-API-Key": key },
-      body: JSON.stringify({
-        model,
-        messages: [
-          {
-            role: "user",
-            content: [
-              { type: "text", text: instruction },
-              { type: "image_url", image_url: { url: dataUrl } },
-            ],
-          },
-        ],
-      }),
-    });
-    if (res.status === 429) throw new Error("Too many requests right now. Please try again in a moment.");
-    if (res.status === 402) throw new Error("AI credits are exhausted. Please add credits to continue.");
-    if (!res.ok) continue;
-    const json = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
-    const text = json.choices?.[0]?.message?.content ?? "";
-    if (text.trim()) return text.trim();
-  }
-  throw new Error("Could not read text from this page.");
+  if (lastError instanceof Error) throw lastError;
+  throw new ProviderError("Gemini could not read text from this page.", 502, false);
 }
 
 /* ----------------------------------------------------------- public: image */
@@ -303,49 +245,21 @@ export async function generateDesignImage(data: {
     .filter(Boolean)
     .join("\n");
 
-  // Gemini first.
-  if (process.env.GEMINI_API_KEY) {
-    for (const model of GEMINI_IMAGE_MODELS) {
-      try {
-        const parts = await withRetry(() =>
-          geminiGenerate(model, { contents: [{ role: "user", parts: [{ text: prompt }] }] }),
-        );
-        const inline = parts.find((p) => p.inlineData?.data)?.inlineData;
-        if (inline?.data) return { image: `data:${inline.mimeType ?? "image/png"};base64,${inline.data}` };
-      } catch (error) {
-        if (isKeyError(error)) throw error;
-      }
+  if (!process.env.GEMINI_API_KEY)
+    throw new ProviderError("Gemini design generation is not configured. Add GEMINI_API_KEY to the server environment.", 503, false);
+  let lastError: unknown;
+  for (const model of GEMINI_IMAGE_MODELS) {
+    try {
+      const parts = await withRetry(() =>
+        geminiGenerate(model, { contents: [{ role: "user", parts: [{ text: prompt }] }] }),
+      );
+      const inline = parts.find((p) => p.inlineData?.data)?.inlineData;
+      if (inline?.data) return { image: `data:${inline.mimeType ?? "image/png"};base64,${inline.data}` };
+    } catch (error) {
+      lastError = error;
+      if (isKeyError(error)) throw error;
     }
   }
-
-  const key = process.env.LOVABLE_API_KEY;
-  if (!key) throw new Error("AI is not configured yet. Add a GEMINI_API_KEY to enable design generation.");
-
-  let lastError = "Design generation failed.";
-  for (const model of IMAGE_MODELS) {
-    const res = await fetchWithTimeout("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "Lovable-API-Key": key },
-      body: JSON.stringify({
-        model,
-        modalities: ["image", "text"],
-        messages: [{ role: "user", content: prompt }],
-      }),
-    });
-
-    if (res.status === 429) throw new Error("Too many requests right now. Please try again in a moment.");
-    if (res.status === 402) throw new Error("AI credits are exhausted. Please add credits to continue.");
-    if (!res.ok) {
-      lastError = `Design generation failed (${res.status}).`;
-      continue;
-    }
-
-    const json = (await res.json()) as {
-      choices?: Array<{ message?: { images?: Array<{ image_url?: { url?: string } }> } }>;
-    };
-    const image = json.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-    if (image) return { image };
-    lastError = "The AI did not return a design. Try adjusting your prompt.";
-  }
-  throw new Error(lastError);
+  if (lastError instanceof Error) throw lastError;
+  throw new ProviderError("Gemini did not return a design. Try adjusting your prompt.", 502, false);
 }

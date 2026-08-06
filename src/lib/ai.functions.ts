@@ -1,38 +1,12 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { z } from "zod";
 import { callGateway, generateDesignImage, ocrImageText } from "./ai.server";
-
-const GenerateInput = z.object({
-  docType: z.string().min(1),
-  prompt: z.string().min(3).max(4000),
-  answers: z.string().max(4000).optional(),
-  language: z.string().max(60).optional(),
-  tone: z.string().max(60).optional(),
-  style: z.string().max(60).optional(),
-});
-
-const DesignInput = z.object({
-  designType: z.string().min(1),
-  prompt: z.string().min(3).max(2000),
-  details: z.string().max(2000).optional(),
-  style: z.string().max(60).optional(),
-  colors: z.string().max(80).optional(),
-  aspect: z.enum(["portrait", "landscape", "square"]).default("portrait"),
-});
-
-const SummarizeInput = z.object({
-  title: z.string().min(1).max(300),
-  content: z.string().min(1).max(20000),
-  pageCount: z.number().int().positive().optional(),
-});
+import { DesignInput, GenerateInput, OcrInput, SummarizeInput } from "./ai.schemas";
 
 export const generateDesign = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => DesignInput.parse(input))
   .handler(async ({ data }) => generateDesignImage(data));
-
-const OcrInput = z.object({ image: z.string().min(32).max(12_000_000) });
 
 export const ocrPage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
