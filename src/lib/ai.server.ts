@@ -277,7 +277,6 @@ export async function generateDesignImage(data: {
       if (isKeyError(error)) throw error;
     }
   }
-  if (isRateLimit(lastError)) throw new ProviderError(RATE_LIMIT_MESSAGE, 429, true);
   if (lastError instanceof Error) throw lastError;
   throw new ProviderError("Gemini did not return a design. Try adjusting your prompt.", 502, false);
 }
