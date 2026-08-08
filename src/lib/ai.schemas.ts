@@ -25,3 +25,12 @@ export const SummarizeInput = z.object({
 });
 
 export const OcrInput = z.object({ image: z.string().min(32).max(12_000_000) });
+
+export const StudyInput = z.object({
+  tool: z.string().min(1).max(60),
+  subject: z.string().min(1).max(60),
+  topic: z.string().min(3).max(500),
+  level: z.string().max(60).optional(),
+  details: z.string().max(3000).optional(),
+  language: z.string().max(60).optional(),
+});
