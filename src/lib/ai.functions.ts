@@ -105,20 +105,3 @@ export const generateStudyMaterial = createServerFn({ method: "POST" })
       keyPoints: Array.isArray(out.keyPoints) ? (out.keyPoints as string[]).slice(0, 6) : [],
     };
   });
-
-const _unusedSummarize = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) => SummarizeInput.parse(input))
-  .handler(async ({ data }) => {
-    const out = await callGateway(
-      'You summarise documents. Reply ONLY with JSON: {"title": string, "purpose": string, "summary": string, "keyPoints": string[]}. Keep the summary under 90 words and keyPoints to 5 short items.',
-      `Title: ${data.title}\nPages: ${data.pageCount ?? "unknown"}\n\nDocument:\n${data.content.slice(0, 15000)}`,
-    );
-
-    return {
-      title: typeof out.title === "string" ? out.title : data.title,
-      purpose: typeof out.purpose === "string" ? out.purpose : "",
-      summary: typeof out.summary === "string" ? out.summary : "",
-      keyPoints: Array.isArray(out.keyPoints) ? (out.keyPoints as string[]).slice(0, 5) : [],
-    };
-  });
