@@ -142,6 +142,63 @@ export type Database = {
         }
         Relationships: []
       }
+      study_sessions: {
+        Row: {
+          content: string
+          created_at: string
+          difficulty: string
+          id: string
+          level: string | null
+          messages: Json
+          quiz: Json | null
+          score: number | null
+          subject: string
+          summary: string
+          title: string
+          tool: string
+          topic: string
+          total: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content?: string
+          created_at?: string
+          difficulty?: string
+          id?: string
+          level?: string | null
+          messages?: Json
+          quiz?: Json | null
+          score?: number | null
+          subject?: string
+          summary?: string
+          title: string
+          tool: string
+          topic: string
+          total?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          difficulty?: string
+          id?: string
+          level?: string | null
+          messages?: Json
+          quiz?: Json | null
+          score?: number | null
+          subject?: string
+          summary?: string
+          title?: string
+          tool?: string
+          topic?: string
+          total?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
