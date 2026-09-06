@@ -1,8 +1,22 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { callGateway, generateDesignImage, ocrImageText } from "./ai.server";
-import { DesignInput, GenerateInput, OcrInput, StudyInput, SummarizeInput } from "./ai.schemas";
+import {
+  DesignInput,
+  GenerateInput,
+  OcrInput,
+  QuizInput,
+  StudyFollowUpInput,
+  StudyInput,
+  SummarizeInput,
+} from "./ai.schemas";
 import { STUDY_TOOL_BRIEFS } from "./study-briefs";
+
+const DIFFICULTY_BRIEF: Record<string, string> = {
+  easy: "Difficulty: EASY. Assume the student is a complete beginner. Use very simple words, short sentences, everyday analogies and lots of encouragement.",
+  medium: "Difficulty: MEDIUM. Standard classroom depth with clear reasoning and some exam-level rigour.",
+  hard: "Difficulty: HARD. Advanced, exam-topper depth: tricky cases, deeper reasoning, higher-order questions and common traps.",
+};
 
 export const generateDesign = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -87,6 +101,7 @@ export const generateStudyMaterial = createServerFn({ method: "POST" })
 
     const user = [
       `Task: ${brief}`,
+      DIFFICULTY_BRIEF[data.difficulty] ?? DIFFICULTY_BRIEF["medium"]!,
       `Subject: ${data.subject}`,
       `Topic: ${data.topic}`,
       data.level ? `Student level: ${data.level}` : "",
@@ -103,5 +118,93 @@ export const generateStudyMaterial = createServerFn({ method: "POST" })
       content: typeof out.content === "string" ? out.content : "",
       summary: typeof out.summary === "string" ? out.summary : "",
       keyPoints: Array.isArray(out.keyPoints) ? (out.keyPoints as string[]).slice(0, 6) : [],
+    };
+  });
+
+/** Follow-up question inside a study session — keeps the session context. */
+export const askStudyFollowUp = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => StudyFollowUpInput.parse(input))
+  .handler(async ({ data }) => {
+    const system = [
+      "You are a patient personal tutor continuing an ongoing study session with one student.",
+      "Answer the student's follow-up question using the study material and conversation so far as context.",
+      "Explain the reasoning, not just the answer. Keep it focused and under 350 words unless the question needs more.",
+      "Use plain text with '- ' bullets and '## ' subheadings when helpful. No placeholders.",
+      'Reply ONLY with JSON of shape: {"answer": string}',
+    ].join(" ");
+
+    const history = data.history
+      .slice(-8)
+      .map((m) => `${m.role === "user" ? "Student" : "Tutor"}: ${m.text}`)
+      .join("\n");
+
+    const user = [
+      `Subject: ${data.subject ?? "General"}`,
+      `Topic: ${data.topic}`,
+      data.level ? `Student level: ${data.level}` : "",
+      DIFFICULTY_BRIEF[data.difficulty] ?? DIFFICULTY_BRIEF["medium"]!,
+      data.material ? `Study material so far:\n${data.material.slice(0, 8000)}` : "",
+      history ? `Conversation so far:\n${history}` : "",
+      `Student's new question: ${data.question}`,
+    ]
+      .filter(Boolean)
+      .join("\n\n");
+
+    const out = await callGateway(system, user);
+    const answer =
+      typeof out.answer === "string" && out.answer.trim()
+        ? out.answer
+        : typeof out.content === "string"
+          ? out.content
+          : "";
+    return { answer };
+  });
+
+/** Interactive MCQ quiz with options, correct answers and explanations. */
+export const generateQuizQuestions = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => QuizInput.parse(input))
+  .handler(async ({ data }) => {
+    const system = [
+      "You write multiple-choice quizzes for students.",
+      "Every question has exactly 4 options, exactly one correct option, and a one or two sentence explanation of why it is correct.",
+      "answerIndex is the 0-based index of the correct option. Never mention the answer inside the question text.",
+      'Reply ONLY with JSON of shape: {"title": string, "questions": [{"question": string, "options": string[], "answerIndex": number, "explanation": string}]}',
+    ].join(" ");
+
+    const user = [
+      `Subject: ${data.subject}`,
+      `Topic: ${data.topic}`,
+      data.level ? `Student level: ${data.level}` : "",
+      DIFFICULTY_BRIEF[data.difficulty] ?? DIFFICULTY_BRIEF["medium"]!,
+      `Write exactly ${data.count} questions.`,
+      data.language ? `Write in ${data.language}.` : "",
+    ]
+      .filter(Boolean)
+      .join("\n");
+
+    const out = await callGateway(system, user);
+    const raw = Array.isArray(out.questions) ? (out.questions as Record<string, unknown>[]) : [];
+
+    const questions = raw
+      .map((q) => {
+        const options = Array.isArray(q.options) ? (q.options as unknown[]).map(String).slice(0, 4) : [];
+        const answerIndex = Number(q.answerIndex);
+        return {
+          question: typeof q.question === "string" ? q.question : "",
+          options,
+          answerIndex: Number.isInteger(answerIndex) && answerIndex >= 0 && answerIndex < options.length ? answerIndex : 0,
+          explanation: typeof q.explanation === "string" ? q.explanation : "",
+        };
+      })
+      .filter((q) => q.question && q.options.length === 4)
+      .slice(0, data.count);
+
+    if (!questions.length) throw new Error("The quiz could not be generated. Please try again.");
+
+    return {
+      title: typeof out.title === "string" && out.title ? out.title : `${data.topic} quiz`,
+      questions,
     };
   });

@@ -17,7 +17,6 @@ import { Route as AuthenticatedAiCreateRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedAiDesignRouteImport } from './routes/_authenticated/ai-design'
 import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/home'
 import { Route as AuthenticatedImageToPdfRouteImport } from './routes/_authenticated/image-to-pdf'
-import { Route as AuthenticatedLearnRouteImport } from './routes/_authenticated/learn'
 import { Route as AuthenticatedLibraryRouteImport } from './routes/_authenticated/library'
 import { Route as AuthenticatedPdfEditorRouteImport } from './routes/_authenticated/pdf-editor'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
@@ -25,6 +24,7 @@ import { Route as AuthenticatedScanRouteImport } from './routes/_authenticated/s
 import { Route as AuthenticatedCreateTypeRouteImport } from './routes/_authenticated/create.$type'
 import { Route as AuthenticatedDesignTypeRouteImport } from './routes/_authenticated/design.$type'
 import { Route as AuthenticatedDocIdRouteImport } from './routes/_authenticated/doc.$id'
+import { Route as AuthenticatedLearnIndexRouteImport } from './routes/_authenticated/learn.index'
 import { Route as AuthenticatedLearnToolRouteImport } from './routes/_authenticated/learn.$tool'
 
 const IndexRoute = IndexRouteImport.update({
@@ -66,11 +66,6 @@ const AuthenticatedImageToPdfRoute = AuthenticatedImageToPdfRouteImport.update({
   path: '/image-to-pdf',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedLearnRoute = AuthenticatedLearnRouteImport.update({
-  id: '/learn',
-  path: '/learn',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const AuthenticatedLibraryRoute = AuthenticatedLibraryRouteImport.update({
   id: '/library',
   path: '/library',
@@ -106,10 +101,15 @@ const AuthenticatedDocIdRoute = AuthenticatedDocIdRouteImport.update({
   path: '/doc/$id',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedLearnIndexRoute = AuthenticatedLearnIndexRouteImport.update({
+  id: '/learn/',
+  path: '/learn/',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedLearnToolRoute = AuthenticatedLearnToolRouteImport.update({
-  id: '/$tool',
-  path: '/$tool',
-  getParentRoute: () => AuthenticatedLearnRoute,
+  id: '/learn/$tool',
+  path: '/learn/$tool',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -120,7 +120,6 @@ export interface FileRoutesByFullPath {
   '/ai-design': typeof AuthenticatedAiDesignRoute
   '/home': typeof AuthenticatedHomeRoute
   '/image-to-pdf': typeof AuthenticatedImageToPdfRoute
-  '/learn': typeof AuthenticatedLearnRouteWithChildren
   '/library': typeof AuthenticatedLibraryRoute
   '/pdf-editor': typeof AuthenticatedPdfEditorRoute
   '/profile': typeof AuthenticatedProfileRoute
@@ -129,6 +128,7 @@ export interface FileRoutesByFullPath {
   '/design/$type': typeof AuthenticatedDesignTypeRoute
   '/doc/$id': typeof AuthenticatedDocIdRoute
   '/learn/$tool': typeof AuthenticatedLearnToolRoute
+  '/learn/': typeof AuthenticatedLearnIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -138,7 +138,6 @@ export interface FileRoutesByTo {
   '/ai-design': typeof AuthenticatedAiDesignRoute
   '/home': typeof AuthenticatedHomeRoute
   '/image-to-pdf': typeof AuthenticatedImageToPdfRoute
-  '/learn': typeof AuthenticatedLearnRouteWithChildren
   '/library': typeof AuthenticatedLibraryRoute
   '/pdf-editor': typeof AuthenticatedPdfEditorRoute
   '/profile': typeof AuthenticatedProfileRoute
@@ -147,6 +146,7 @@ export interface FileRoutesByTo {
   '/design/$type': typeof AuthenticatedDesignTypeRoute
   '/doc/$id': typeof AuthenticatedDocIdRoute
   '/learn/$tool': typeof AuthenticatedLearnToolRoute
+  '/learn': typeof AuthenticatedLearnIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -158,7 +158,6 @@ export interface FileRoutesById {
   '/_authenticated/ai-design': typeof AuthenticatedAiDesignRoute
   '/_authenticated/home': typeof AuthenticatedHomeRoute
   '/_authenticated/image-to-pdf': typeof AuthenticatedImageToPdfRoute
-  '/_authenticated/learn': typeof AuthenticatedLearnRouteWithChildren
   '/_authenticated/library': typeof AuthenticatedLibraryRoute
   '/_authenticated/pdf-editor': typeof AuthenticatedPdfEditorRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
@@ -167,6 +166,7 @@ export interface FileRoutesById {
   '/_authenticated/design/$type': typeof AuthenticatedDesignTypeRoute
   '/_authenticated/doc/$id': typeof AuthenticatedDocIdRoute
   '/_authenticated/learn/$tool': typeof AuthenticatedLearnToolRoute
+  '/_authenticated/learn/': typeof AuthenticatedLearnIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -178,7 +178,6 @@ export interface FileRouteTypes {
     | '/ai-design'
     | '/home'
     | '/image-to-pdf'
-    | '/learn'
     | '/library'
     | '/pdf-editor'
     | '/profile'
@@ -187,6 +186,7 @@ export interface FileRouteTypes {
     | '/design/$type'
     | '/doc/$id'
     | '/learn/$tool'
+    | '/learn/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -196,7 +196,6 @@ export interface FileRouteTypes {
     | '/ai-design'
     | '/home'
     | '/image-to-pdf'
-    | '/learn'
     | '/library'
     | '/pdf-editor'
     | '/profile'
@@ -205,6 +204,7 @@ export interface FileRouteTypes {
     | '/design/$type'
     | '/doc/$id'
     | '/learn/$tool'
+    | '/learn'
   id:
     | '__root__'
     | '/'
@@ -215,7 +215,6 @@ export interface FileRouteTypes {
     | '/_authenticated/ai-design'
     | '/_authenticated/home'
     | '/_authenticated/image-to-pdf'
-    | '/_authenticated/learn'
     | '/_authenticated/library'
     | '/_authenticated/pdf-editor'
     | '/_authenticated/profile'
@@ -224,6 +223,7 @@ export interface FileRouteTypes {
     | '/_authenticated/design/$type'
     | '/_authenticated/doc/$id'
     | '/_authenticated/learn/$tool'
+    | '/_authenticated/learn/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -290,13 +290,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedImageToPdfRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/learn': {
-      id: '/_authenticated/learn'
-      path: '/learn'
-      fullPath: '/learn'
-      preLoaderRoute: typeof AuthenticatedLearnRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/library': {
       id: '/_authenticated/library'
       path: '/library'
@@ -346,26 +339,22 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDocIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/learn/': {
+      id: '/_authenticated/learn/'
+      path: '/learn'
+      fullPath: '/learn/'
+      preLoaderRoute: typeof AuthenticatedLearnIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/learn/$tool': {
       id: '/_authenticated/learn/$tool'
-      path: '/$tool'
+      path: '/learn/$tool'
       fullPath: '/learn/$tool'
       preLoaderRoute: typeof AuthenticatedLearnToolRouteImport
-      parentRoute: typeof AuthenticatedLearnRoute
+      parentRoute: typeof AuthenticatedRouteRoute
     }
   }
 }
-
-interface AuthenticatedLearnRouteChildren {
-  AuthenticatedLearnToolRoute: typeof AuthenticatedLearnToolRoute
-}
-
-const AuthenticatedLearnRouteChildren: AuthenticatedLearnRouteChildren = {
-  AuthenticatedLearnToolRoute: AuthenticatedLearnToolRoute,
-}
-
-const AuthenticatedLearnRouteWithChildren =
-  AuthenticatedLearnRoute._addFileChildren(AuthenticatedLearnRouteChildren)
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdSettingsRoute: typeof AuthenticatedAdSettingsRoute
@@ -373,7 +362,6 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAiDesignRoute: typeof AuthenticatedAiDesignRoute
   AuthenticatedHomeRoute: typeof AuthenticatedHomeRoute
   AuthenticatedImageToPdfRoute: typeof AuthenticatedImageToPdfRoute
-  AuthenticatedLearnRoute: typeof AuthenticatedLearnRouteWithChildren
   AuthenticatedLibraryRoute: typeof AuthenticatedLibraryRoute
   AuthenticatedPdfEditorRoute: typeof AuthenticatedPdfEditorRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
@@ -381,6 +369,8 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCreateTypeRoute: typeof AuthenticatedCreateTypeRoute
   AuthenticatedDesignTypeRoute: typeof AuthenticatedDesignTypeRoute
   AuthenticatedDocIdRoute: typeof AuthenticatedDocIdRoute
+  AuthenticatedLearnToolRoute: typeof AuthenticatedLearnToolRoute
+  AuthenticatedLearnIndexRoute: typeof AuthenticatedLearnIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -389,7 +379,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAiDesignRoute: AuthenticatedAiDesignRoute,
   AuthenticatedHomeRoute: AuthenticatedHomeRoute,
   AuthenticatedImageToPdfRoute: AuthenticatedImageToPdfRoute,
-  AuthenticatedLearnRoute: AuthenticatedLearnRouteWithChildren,
   AuthenticatedLibraryRoute: AuthenticatedLibraryRoute,
   AuthenticatedPdfEditorRoute: AuthenticatedPdfEditorRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
@@ -397,6 +386,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCreateTypeRoute: AuthenticatedCreateTypeRoute,
   AuthenticatedDesignTypeRoute: AuthenticatedDesignTypeRoute,
   AuthenticatedDocIdRoute: AuthenticatedDocIdRoute,
+  AuthenticatedLearnToolRoute: AuthenticatedLearnToolRoute,
+  AuthenticatedLearnIndexRoute: AuthenticatedLearnIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
@@ -410,3 +401,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
