@@ -26,11 +26,36 @@ export const SummarizeInput = z.object({
 
 export const OcrInput = z.object({ image: z.string().min(32).max(12_000_000) });
 
+export const Difficulty = z.enum(["easy", "medium", "hard"]);
+
 export const StudyInput = z.object({
   tool: z.string().min(1).max(60),
   subject: z.string().min(1).max(60),
   topic: z.string().min(3).max(500),
   level: z.string().max(60).optional(),
   details: z.string().max(3000).optional(),
+  language: z.string().max(60).optional(),
+  difficulty: Difficulty.default("medium"),
+});
+
+export const StudyFollowUpInput = z.object({
+  topic: z.string().min(1).max(500),
+  subject: z.string().max(60).optional(),
+  level: z.string().max(60).optional(),
+  difficulty: Difficulty.default("medium"),
+  material: z.string().max(12000).default(""),
+  history: z
+    .array(z.object({ role: z.enum(["user", "ai"]), text: z.string().max(6000) }))
+    .max(20)
+    .default([]),
+  question: z.string().min(2).max(2000),
+});
+
+export const QuizInput = z.object({
+  subject: z.string().min(1).max(60),
+  topic: z.string().min(3).max(500),
+  level: z.string().max(60).optional(),
+  difficulty: Difficulty.default("medium"),
+  count: z.number().int().min(3).max(15).default(8),
   language: z.string().max(60).optional(),
 });
