@@ -1,8 +1,22 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { callGateway, generateDesignImage, ocrImageText } from "./ai.server";
-import { DesignInput, GenerateInput, OcrInput, StudyInput, SummarizeInput } from "./ai.schemas";
+import {
+  DesignInput,
+  GenerateInput,
+  OcrInput,
+  QuizInput,
+  StudyFollowUpInput,
+  StudyInput,
+  SummarizeInput,
+} from "./ai.schemas";
 import { STUDY_TOOL_BRIEFS } from "./study-briefs";
+
+const DIFFICULTY_BRIEF: Record<string, string> = {
+  easy: "Difficulty: EASY. Assume the student is a complete beginner. Use very simple words, short sentences, everyday analogies and lots of encouragement.",
+  medium: "Difficulty: MEDIUM. Standard classroom depth with clear reasoning and some exam-level rigour.",
+  hard: "Difficulty: HARD. Advanced, exam-topper depth: tricky cases, deeper reasoning, higher-order questions and common traps.",
+};
 
 export const generateDesign = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
