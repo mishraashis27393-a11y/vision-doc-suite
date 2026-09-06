@@ -3,7 +3,7 @@ import { ChevronRight, GraduationCap } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { STUDY_GROUPS, STUDY_SUBJECTS, STUDY_TOOLS } from "@/lib/study";
 
-export const Route = createFileRoute("/_authenticated/learn")({
+export const Route = createFileRoute("/_authenticated/learn/")({
   head: () => ({
     meta: [
       { title: "Student Learning — D.Cr Library" },
